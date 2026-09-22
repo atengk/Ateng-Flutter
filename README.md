@@ -15,7 +15,7 @@
 
 | 操作系统 / 生态 | 架构 | 规范化安装包 / 制品文件名 | 格式 | 遵循标准与特性说明 |
 | :--- | :--- | :--- | :---: | :--- |
-| 🪟 **Windows** | `x64` | `flutter-multiplatform-demo_1.0.5_windows_x64_setup.exe`<br>`flutter-multiplatform-demo_1.0.5_windows_x64_portable.zip` | `.exe`<br>`.zip` | **Inno Setup 原生简体中文安装向导** (含开始菜单、桌面图标与卸载器)<br>免安装便携绿色包 (支持 Win11 ARM 转译运行) |
+| 💻 **Windows** | `x64` | `flutter-multiplatform-demo_1.0.5_windows_x64_setup.exe`<br>`flutter-multiplatform-demo_1.0.5_windows_x64_portable.zip` | `.exe`<br>`.zip` | **Inno Setup 原生简体中文安装向导** (含开始菜单、桌面图标与卸载器)<br>免安装便携绿色包 (支持 Win11 ARM 转译运行) |
 | 🍎 **macOS** | Universal | `flutter-multiplatform-demo_1.0.5_macos_universal.dmg`<br>`flutter-multiplatform-demo_1.0.5_macos_universal.zip` | `.dmg`<br>`.zip` | **标准挂载磁盘安装镜像** (含拖拽至 Applications 原生安装)<br>通用双架构 App Bundle 绿色包 (M 芯片与 Intel 原生即开) |
 | 📱 **iOS** | `arm64` | `flutter-multiplatform-demo_1.0.5_ios_arm64.ipa` | `.ipa` | 标准未签名测试安装包 (支持 TrollStore / AltStore / 企业自签) |
 | 🤖 **Android** | Universal | `flutter-multiplatform-demo_1.0.5_android_universal.apk` | `.apk` | 生产环境 Release APK 胖包 (内置 ARMv7/ARM64/x86 全部原生库) |
@@ -31,32 +31,45 @@
 
 ```mermaid
 flowchart TD
-    Trigger["触发事件<br/>• 代码推送到 main<br/>• 创建 Pull Request<br/>• 推送版本标签 (v*)<br/>• 手动触发 (workflow_dispatch)"]
+    Trigger["触发事件<br/>• 代码推送 main<br/>• 创建 Pull Request<br/>• 推送版本标签 v*<br/>• 手动触发 workflow_dispatch"]
 
-    Trigger --> Filter{"过滤检查<br/>(paths-ignore)"}
-    Filter -->|文档类修改 (*.md / docs)| Silent["跳过执行 (节约算力)"]
-    Filter -->|代码与配置变更| Gate["阶段 1：全局质量门禁 (Lint & Test)<br/>代码格式化 + 静态分析 + 单元测试 (约 40s)"]
+    Trigger --> Filter{"过滤检查 paths-ignore"}
+    Filter -->|"文档修改 (跳过构建)"| Silent["跳过执行 (节约算力)"]
+    Filter -->|"代码与配置变更"| Gate["阶段 1：全局质量门禁 (Lint & Test)<br/>代码格式化 + 静态分析 + 单元测试"]
 
-    Gate -->|门禁失败| Stop["立即中断 (阻断后续构建)"]
-    Gate -->|普通提交通过| Done["CI 正常完成 (绿色通过)"]
-    Gate -->|Tag / 手动触发通过| Meta["阶段 1.5：版本号解析 (resolve-meta)"]
+    Gate -->|"门禁失败"| Stop["立即中断 (阻断后续构建)"]
+    Gate -->|"日常提交通过"| Done["CI 正常完成 (绿色通过)"]
+    Gate -->|"推送标签 v* 或手动触发"| Meta["阶段 1.5：版本元数据解析 (resolve-meta)"]
 
-    Meta --> Matrix["阶段 2：全平台与多架构并行打包矩阵"]
+    Meta --> Win
+    Meta --> Mac
+    Meta --> iOS
+    Meta --> And
+    Meta --> Web
+    Meta --> Lx64
+    Meta --> Larm
 
-    subgraph Matrix["7 大并行打包任务"]
-        Win["Windows (windows-latest)<br/>• 绿色 ZIP<br/>• Inno Setup 中文安装包"]
+    subgraph BuildMatrix["阶段 2：7 大全平台与多架构并行打包矩阵"]
+        Win["Windows (windows-latest)<br/>• 绿色便携 ZIP<br/>• Inno Setup 中文安装包"]
         Mac["macOS (macos-latest)<br/>• 便携 ZIP<br/>• 原生 DMG 磁盘镜像"]
         iOS["iOS (macos-latest)<br/>• 未签名 Payload IPA"]
-        And["Android (ubuntu-latest)<br/>• Gradle 依赖缓存加速<br/>• Universal Fat APK"]
+        And["Android (ubuntu-latest)<br/>• Gradle 缓存加速<br/>• Universal Fat APK"]
         Web["Web (ubuntu-latest)<br/>• HTML5 / Wasm 资源包"]
         Lx64["Linux x86_64 (ubuntu-latest)<br/>• DEB + RPM + TAR.GZ"]
-        Larm["Linux ARM64 (ubuntu-24.04-arm 物理机)<br/>• 统信/麒麟 DEB + openEuler RPM"]
+        Larm["Linux ARM64 (ubuntu-24.04-arm)<br/>• 统信/麒麟 DEB + openEuler RPM"]
     end
 
-    Matrix --> Publish["阶段 3：汇总与发布 (Publish GitHub Release)"]
-    Publish --> Checksum["生成 SHA-256 校验清单 (checksums.txt)"]
-    Publish --> ReleaseBody["动态生成 Markdown 结构化下载指南"]
-    Checksum --> FinalRelease["GitHub Releases 正式发布"]
+    Win --> Collect["阶段 3：制品汇总与校验"]
+    Mac --> Collect
+    iOS --> Collect
+    And --> Collect
+    Web --> Collect
+    Lx64 --> Collect
+    Larm --> Collect
+
+    Collect --> Checksum["生成 SHA-256 校验清单 (checksums.txt)"]
+    Collect --> ReleaseBody["动态生成 Markdown 结构化下载指南"]
+    Checksum --> FinalRelease["GitHub Releases 统一发布"]
     ReleaseBody --> FinalRelease
 ```
 

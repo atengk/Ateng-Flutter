@@ -107,12 +107,11 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: 配置 Java 环境与 Gradle 缓存
+      - name: 配置 Java 环境
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
 
       - name: 配置 Flutter 环境
         uses: subosito/flutter-action@v2
@@ -521,7 +520,7 @@ jobs:
 
           | 操作系统 / 生态 | 架构 | 安装器 / 下载文件 | 格式 | 说明 |
           | :--- | :--- | :--- | :---: | :--- |
-          | 🪟 **Windows** | x64 | `${APP_NAME}_${VERSION}_windows_x64_setup.exe`<br>`${APP_NAME}_${VERSION}_windows_x64_portable.zip` | `.exe`<br>`.zip` | **Inno Setup 原生简体中文安装向导**<br>绿色免安装便携包 |
+          | 💻 **Windows** | x64 | `${APP_NAME}_${VERSION}_windows_x64_setup.exe`<br>`${APP_NAME}_${VERSION}_windows_x64_portable.zip` | `.exe`<br>`.zip` | **Inno Setup 原生简体中文安装向导**<br>绿色免安装便携包 |
           | 🍎 **macOS** | Universal | `${APP_NAME}_${VERSION}_macos_universal.dmg`<br>`${APP_NAME}_${VERSION}_macos_universal.zip` | `.dmg`<br>`.zip` | **标准挂载磁盘安装镜像 (含拖拽安装)**<br>App Bundle 绿色包 |
           | 📱 **iOS** | arm64 | `${APP_NAME}_${VERSION}_ios_arm64.ipa` | `.ipa` | 未签名标准安装包 (支持 TrollStore / 自签) |
           | 🤖 **Android** | Universal | `${APP_NAME}_${VERSION}_android_universal.apk` | `.apk` | 生产环境 Release 胖包 (内置全架构原生库) |
