@@ -19,6 +19,9 @@
   - 对外开放的 Widget 类、公共 Service 方法、领域模型字段必须提供完整文档注释。
   - 聚焦说明业务含义、边界约束（空值行为、参数取值范围、异常说明）。
   - 自解释的私有小方法、标准 `@override` 方法免除冗余注释。
+- **文档渲染与跨平台符号安全 (Markdown & Emoji Safeguards)**：
+  - **Mermaid 流程图词法防御**：Markdown 架构与流程图中，所有包含括号 `(` `)`、斜杠 `/`、星号 `*` 等非纯字符的连接线文本，**强制使用双引号包裹**：`-->|"..."|`，防止 GitHub 等解析器将括号误判为节点形状起始符引发解析崩溃；节点 ID 与子图（`subgraph`）ID 必须严格隔离，严禁重名冲突。
+  - **跨平台通用 Emoji 选型**：文档、支持矩阵表格与状态展示中的图标，必须优先选用全平台（Windows/macOS/Linux/Android/iOS）100% 具备字模回退支持的通用 Unicode 6.0/7.0 字符（如使用 `💻` 表示 Windows/PC，严禁使用新版高位字符如 `🪟` 导致客户端降级显示为“豆腐块”未识别方块 `▯`）。
 
 ---
 
@@ -145,6 +148,9 @@ lib/
 - **强制尾随逗号 (Trailing Commas)**：
   - 在所有多行函数签名、组件构造函数调用、集合字面量结尾处，**强制添加尾随逗号 `,`**。
   - 保证运行 `dart format` 时自动生成优雅的参数折叠缩进，并将 Git 代码审查的 Diff 变动压制到最小单一变更行。
+- **代码提交前本地格式化自检 (Pre-commit Format Guard)**：
+  - 在执行 Git Commit 前，**强制在本地运行 `dart format .`** 对齐所有代码缩进；
+  - 并在提交前通过 `dart format --output=none --set-exit-if-changed .` 校验退出码必须为 0，彻底杜绝在 CI 云端触发 `Changed ... Error: Process completed with exit code 1` 格式门禁中断。
 
 ---
 
@@ -152,6 +158,8 @@ lib/
 
 - **单一高内聚流水线**：所有 CI（质量门禁）与 CD（全平台发布）统一维护在 [`.github/workflows/pipeline.yml`](file:///c:/Users/kongyu/Documents/antigravity/noble-babbage/.github/workflows/pipeline.yml) 中，严禁随意拆分成互斥或并行的碎片流水线。
 - **并发控制与自动取消**：必须配置 `concurrency: cancel-in-progress: true`，防止多任务堆叠。
+- **动态生成工程时的缓存防御 (Dynamic Project Cache Guard)**：
+  - 对于未在 Git 仓库中直接提交 `android/` 或桌面平台结构、采用在 CI 运行时动态执行 `flutter create` 生成工程的项目，**严禁在 `actions/setup-java` 中配置 `cache: 'gradle'`**（因工程生成前缺少 Gradle 描述文件会导致哈希键计算异常终止流水线）。
 - **两阶段门禁**：
   1. **日常提交 / PR**：仅运行 `Lint & Test`（快速测试代码格式、静态分析与单元测试）。
   2. **发布触发**：必须先 100% 通过质量门禁，且仅在推送版本标签（`v*`）或手动 `workflow_dispatch` 时，才允许并行拉起全平台耗时打包构建。
