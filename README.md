@@ -4,13 +4,15 @@
 
 ## 平台支持矩阵与制品清单
 
-| 平台 | 构建产物 | 格式 | 说明 |
-| :--- | :--- | :--- | :--- |
-| **Android** | `app-release.apk` | `.apk` | Android 安装包 (Release 模式) |
-| **Web** | `web-release.zip` | `.zip` | 包含静态 HTML/JS/Wasm 资源的网站压缩包 |
-| **Windows** | `windows-release.zip` | `.zip` | Windows 桌面可执行程序及依赖库压缩包 |
-| **Linux** | `linux-release.zip` | `.zip` | Linux 桌面可执行程序及依赖压缩包 |
-| **macOS** | `flutter-multiplatform-demo-macos.zip` | `.zip` | macOS 桌面 App Bundle 独立运行包 |
+| 平台 | 架构 | 制品文件名 | 格式 | 说明 |
+| :--- | :--- | :--- | :--- | :--- |
+| 🤖 **Android** | Universal | `flutter-multiplatform-demo-android.apk` | `.apk` | 生产 Release APK 安装包 (内置 ARM/x86 全架构) |
+| 📱 **iOS** | arm64 | `flutter-multiplatform-demo-ios.ipa` | `.ipa` | 未签名测试安装包 (支持 TrollStore / AltStore / 自签) |
+| 🌐 **Web** | - | `flutter-multiplatform-demo-web.zip` | `.zip` | 包含静态 HTML/JS/Wasm 资源的网站压缩包 |
+| 🪟 **Windows** | x64 | `flutter-multiplatform-demo-windows-setup.exe`<br>`flutter-multiplatform-demo-windows.zip` | `.exe`<br>`.zip` | **Inno Setup 单文件向导安装包**<br>绿色免安装便携包 |
+| 🍎 **macOS** | Universal | `flutter-multiplatform-demo-macos.dmg`<br>`flutter-multiplatform-demo-macos.zip` | `.dmg`<br>`.zip` | **标准挂载磁盘安装镜像 (含 Applications 快捷)**<br>App Bundle 便携包 |
+| 🐧 **Linux (x86_64)** | x86_64 | `flutter-multiplatform-demo-linux-x86_64.deb`<br>`flutter-multiplatform-demo-linux-x86_64.rpm`<br>`flutter-multiplatform-demo-linux-x86_64.zip` | `.deb`<br>`.rpm`<br>`.zip` | **Debian/Ubuntu/Deepin 标准安装包**<br>**RedHat/Fedora/CentOS 标准安装包**<br>独立运行绿色包 |
+| 🐉 **Linux (ARM64)** | arm64 | `flutter-multiplatform-demo-linux-arm64.deb`<br>`flutter-multiplatform-demo-linux-arm64.rpm`<br>`flutter-multiplatform-demo-linux-arm64.zip` | `.deb`<br>`.rpm`<br>`.zip` | **统信 UOS / 银河麒麟信创标准包**<br>**openEuler / RedHat 信创标准包**<br>树莓派/ARM64 独立运行包 |
 
 ---
 

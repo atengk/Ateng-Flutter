@@ -14,13 +14,15 @@ on:
         required: false
         default: 'v1.0.3'
 
-# 解决重复运行与资源浪费：同一分支或标签有新构建触发时，自动取消旧的排队/进行中任务
+# 解决重复运行与资源浪费：同一分支或标签有新构建触发时，自动取消旧的在途任务
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # 阶段 1：质量检测门禁 (Lint & Test)
+  # ========================================================
+  # 阶段 1：全局质量门禁 (Lint & Test)
+  # ========================================================
   lint-and-test:
     name: Lint & Test
     runs-on: ubuntu-latest
@@ -46,7 +48,11 @@ jobs:
       - name: 运行单元测试
         run: flutter test
 
-  # 阶段 2：多平台并行打包构建 (仅在推送版本标签或手动触发，且门禁测试通过后执行)
+  # ========================================================
+  # 阶段 2：多平台与多架构并行构建 (仅在推送版本标签或手动触发时执行)
+  # ========================================================
+
+  # 1. Android (Universal Fat APK)
   build-android:
     name: Build Android APK
     needs: [lint-and-test]
@@ -88,6 +94,45 @@ jobs:
           name: android-apk
           path: flutter-multiplatform-demo-android.apk
 
+  # 2. iOS (Unsigned .ipa 测试包)
+  build-ios:
+    name: Build iOS IPA
+    needs: [lint-and-test]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: macos-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Flutter 环境
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 生成 iOS 工程结构
+        run: flutter create . --platforms=ios --org com.example
+
+      - name: 获取依赖
+        run: flutter pub get
+
+      - name: 编译 iOS (Release, No CodeSign)
+        run: flutter build ios --release --no-codesign
+
+      - name: 打包为未签名 IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r flutter-multiplatform-demo-ios.ipa Payload
+          rm -rf Payload
+
+      - name: 上传 iOS 制品
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: flutter-multiplatform-demo-ios.ipa
+
+  # 3. Web 静态资源包
   build-web:
     name: Build Web Package
     needs: [lint-and-test]
@@ -126,14 +171,19 @@ jobs:
           name: web-zip
           path: flutter-multiplatform-demo-web.zip
 
+  # 4. Windows 桌面端 (绿色 ZIP + Inno Setup 安装包)
   build-windows:
-    name: Build Windows Desktop
+    name: Build Windows Desktop & Installer
     needs: [lint-and-test]
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
+
+      - name: 安装 Inno Setup 打包器
+        shell: pwsh
+        run: choco install innosetup --no-progress
 
       - name: 配置 Flutter 环境
         uses: subosito/flutter-action@v2
@@ -155,62 +205,50 @@ jobs:
         shell: pwsh
         run: flutter build windows --release
 
-      - name: 打包 Windows 制品为 ZIP
+      - name: 打包 Windows 绿色便携 ZIP
         shell: pwsh
         run: |
           Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "flutter-multiplatform-demo-windows.zip"
 
+      - name: 构建 Inno Setup 安装向导 (Setup.exe)
+        shell: pwsh
+        run: |
+          $issContent = @"
+          [Setup]
+          AppName=Flutter Multiplatform Demo
+          AppVersion=1.0.0
+          DefaultDirName={autopf}\FlutterMultiplatformDemo
+          DefaultGroupName=Flutter Multiplatform Demo
+          OutputDir=.
+          OutputBaseFilename=flutter-multiplatform-demo-windows-setup
+          Compression=lzma
+          SolidCompression=yes
+          DisableProgramGroupPage=yes
+
+          [Files]
+          Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+          [Icons]
+          Name: "{autoprograms}\Flutter Multiplatform Demo"; Filename: "{app}\flutter_multiplatform_demo.exe"
+          Name: "{autodesktop}\Flutter Multiplatform Demo"; Filename: "{app}\flutter_multiplatform_demo.exe"; Tasks: desktopicon
+
+          [Tasks]
+          Name: "desktopicon"; Description: "Create a desktop icon"; GroupDescription: "Additional icons:"
+          "@
+          Set-Content -Path "installer.iss" -Value $issContent
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+
       - name: 上传 Windows 制品
         uses: actions/upload-artifact@v4
         with:
-          name: windows-zip
-          path: flutter-multiplatform-demo-windows.zip
+          name: windows-artifacts
+          path: |
+            flutter-multiplatform-demo-windows.zip
+            flutter-multiplatform-demo-windows-setup.exe
 
-  build-linux:
-    name: Build Linux Desktop
-    needs: [lint-and-test]
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
-
-      - name: 安装 Linux 原生桌面编译依赖
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
-
-      - name: 配置 Flutter 环境
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: 生成 Linux 工程结构
-        run: |
-          flutter config --enable-linux-desktop
-          flutter create . --platforms=linux
-
-      - name: 获取依赖
-        run: flutter pub get
-
-      - name: 编译 Linux 桌面端
-        run: flutter build linux --release
-
-      - name: 打包 Linux 制品为 ZIP
-        run: |
-          cd build/linux/x64/release/bundle
-          zip -r ../../../../../flutter-multiplatform-demo-linux.zip .
-          cd ../../../../..
-
-      - name: 上传 Linux 制品
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-zip
-          path: flutter-multiplatform-demo-linux.zip
-
+  # 5. macOS 桌面端 (绿色 ZIP + 标准 DMG 磁盘安装镜像)
   build-macos:
-    name: Build macOS Desktop
+    name: Build macOS Desktop & DMG
     needs: [lint-and-test]
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: macos-latest
@@ -235,20 +273,127 @@ jobs:
       - name: 编译 macOS 桌面端
         run: flutter build macos --release
 
-      - name: 打包 macOS 制品为 ZIP
+      - name: 打包 macOS 便携 ZIP
         run: |
           ditto -c -k --sequesterRsrc --keepParent build/macos/Build/Products/Release/flutter_multiplatform_demo.app flutter-multiplatform-demo-macos.zip
+
+      - name: 制作 macOS 标准 DMG 挂载安装镜像
+        run: |
+          mkdir -p dmg_root
+          cp -R "build/macos/Build/Products/Release/flutter_multiplatform_demo.app" dmg_root/
+          ln -s /Applications dmg_root/Applications
+          hdiutil create -volname "Flutter Multiplatform Demo" -srcfolder dmg_root -ov -format UDZO flutter-multiplatform-demo-macos.dmg
+          rm -rf dmg_root
 
       - name: 上传 macOS 制品
         uses: actions/upload-artifact@v4
         with:
-          name: macos-zip
-          path: flutter-multiplatform-demo-macos.zip
+          name: macos-artifacts
+          path: |
+            flutter-multiplatform-demo-macos.zip
+            flutter-multiplatform-demo-macos.dmg
 
-  # 阶段 3：汇总所有平台制品并自动发布 GitHub Release
+  # 6. Linux 桌面端与双架构安装包 (x86_64 与 ARM64 双架构矩阵：DEB + RPM + ZIP)
+  build-linux:
+    name: Build Linux (${{ matrix.arch }})
+    needs: [lint-and-test]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+            fpm_arch: x86_64
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            fpm_arch: aarch64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Linux 原生编译与 FPM 打包依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev ruby ruby-dev rubygems build-essential rpm
+          sudo gem install --no-document fpm
+
+      - name: 配置 Flutter 环境
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 生成 Linux 工程结构
+        run: |
+          flutter config --enable-linux-desktop
+          flutter create . --platforms=linux
+
+      - name: 获取依赖
+        run: flutter pub get
+
+      - name: 编译 Linux 桌面端
+        run: flutter build linux --release
+
+      - name: 定位构建产物目录
+        id: bundle
+        run: |
+          BUNDLE_DIR=$(find build/linux -type d -name "bundle" | head -n 1)
+          echo "dir=$BUNDLE_DIR" >> $GITHUB_OUTPUT
+
+      - name: 打包 Linux 便携 ZIP
+        run: |
+          cd "${{ steps.bundle.outputs.dir }}"
+          zip -r "$GITHUB_WORKSPACE/flutter-multiplatform-demo-linux-${{ matrix.arch }}.zip" .
+          cd "$GITHUB_WORKSPACE"
+
+      - name: 打包 Linux DEB 与 RPM 安装包
+        run: |
+          mkdir -p pkg_root/opt/flutter_multiplatform_demo pkg_root/usr/bin pkg_root/usr/share/applications
+          cp -r "${{ steps.bundle.outputs.dir }}"/* pkg_root/opt/flutter_multiplatform_demo/
+          ln -s /opt/flutter_multiplatform_demo/flutter_multiplatform_demo pkg_root/usr/bin/flutter_multiplatform_demo
+
+          cat << 'EOF' > pkg_root/usr/share/applications/flutter_multiplatform_demo.desktop
+          [Desktop Entry]
+          Name=Flutter Multiplatform Demo
+          Comment=Flutter Multiplatform Demo Application
+          Exec=/usr/bin/flutter_multiplatform_demo
+          Terminal=false
+          Type=Application
+          Categories=Utility;
+          EOF
+
+          fpm -s dir -t deb \
+            -n flutter-multiplatform-demo \
+            -v 1.0.0 \
+            -a ${{ matrix.fpm_arch }} \
+            --description "Flutter Multiplatform Demo Application" \
+            -C pkg_root \
+            -p "flutter-multiplatform-demo-linux-${{ matrix.arch }}.deb"
+
+          fpm -s dir -t rpm \
+            -n flutter-multiplatform-demo \
+            -v 1.0.0 \
+            -a ${{ matrix.fpm_arch }} \
+            --description "Flutter Multiplatform Demo Application" \
+            -C pkg_root \
+            -p "flutter-multiplatform-demo-linux-${{ matrix.arch }}.rpm"
+
+      - name: 上传 Linux 制品
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}-artifacts
+          path: |
+            flutter-multiplatform-demo-linux-${{ matrix.arch }}.zip
+            flutter-multiplatform-demo-linux-${{ matrix.arch }}.deb
+            flutter-multiplatform-demo-linux-${{ matrix.arch }}.rpm
+
+  # ========================================================
+  # 阶段 3：汇总所有平台与架构制品，自动发布 GitHub Release
+  # ========================================================
   publish-release:
     name: Publish GitHub Release
-    needs: [build-android, build-web, build-windows, build-linux, build-macos]
+    needs: [build-android, build-ios, build-web, build-windows, build-macos, build-linux]
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
@@ -260,13 +405,13 @@ jobs:
       - name: 创建产物接收目录
         run: mkdir -p ./artifacts
 
-      - name: 下载全部平台制品
+      - name: 下载全部平台与架构制品
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
           merge-multiple: true
 
-      - name: 检查收集到的发布制品清单
+      - name: 检查收集到的全平台发布制品清单
         run: ls -lh ./artifacts
 
       - name: 确定发布标签
