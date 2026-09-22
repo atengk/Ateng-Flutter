@@ -2,10 +2,13 @@
 
 [![CI/CD Pipeline](https://github.com/atengk/flutter-multiplatform-demo/actions/workflows/pipeline.yml/badge.svg)](https://github.com/atengk/flutter-multiplatform-demo/actions/workflows/pipeline.yml)
 [![GitHub Release](https://img.shields.io/github/v/release/atengk/flutter-multiplatform-demo?logo=github&color=blue)](https://github.com/atengk/flutter-multiplatform-demo/releases)
+[![GitHub Pages](https://img.shields.io/badge/Web%20Demo-GitHub%20Pages-24292e?logo=github)](https://atengk.github.io/flutter-multiplatform-demo/)
 [![Flutter Version](https://img.shields.io/badge/Flutter-3.x%20Stable-02569B?logo=flutter)](https://flutter.dev)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 本项目是一个基于 **Flutter & Dart** 构建的工业级跨平台演示工程，深度融合 **GitHub Actions** 全平台自动化 CI/CD 流水线，实现日常提交快速质量门禁，以及版本标签推送时**全自动多平台编译、标准向导安装包封装、校验哈希生成与 GitHub Releases 制品分发**。
+
+> 🌐 **Web 在线演示体验 (GitHub Pages)**：[https://atengk.github.io/flutter-multiplatform-demo/](https://atengk.github.io/flutter-multiplatform-demo/)
 
 ---
 
