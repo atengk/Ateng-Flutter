@@ -2,6 +2,8 @@
 ///
 /// @author Ateng
 /// @since 2026-09-22
+library;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
