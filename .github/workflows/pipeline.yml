@@ -515,13 +515,13 @@ jobs:
 
       - name: 配置鸿蒙环境变量
         run: |
-          echo "FLUTTER_GIT_URL=https://gitee.com/openharmony-sig/flutter_flutter.git" >> $GITHUB_ENV
+          echo "FLUTTER_GIT_URL=https://gitcode.com/openharmony-sig/flutter_flutter.git" >> $GITHUB_ENV
           echo "DEVECO_SDK_HOME=$HOS_SDK_HOME" >> $GITHUB_ENV
           echo "TOOL_HOME=/home/runner/ohos-sdk/command-line-tools" >> $GITHUB_ENV
 
       - name: 克隆 OpenHarmony-SIG 定制版 Flutter SDK (3.22 分支)
         run: |
-          git clone --depth 1 -b 3.22.0-ohos https://gitee.com/openharmony-sig/flutter_flutter.git "$HOME/flutter_ohos"
+          git clone --depth 1 -b 3.22.0-ohos https://gitcode.com/openharmony-sig/flutter_flutter.git "$HOME/flutter_ohos"
           echo "$HOME/flutter_ohos/bin" >> $GITHUB_PATH
           git config --global --add safe.directory "$HOME/flutter_ohos"
 
@@ -538,8 +538,9 @@ jobs:
           echo "dependency_overrides:" >> pubspec.yaml
           echo "  shared_preferences_ohos:" >> pubspec.yaml
           echo "    git:" >> pubspec.yaml
-          echo "      url: https://gitee.com/openharmony-sig/flutter_packages.git" >> pubspec.yaml
+          echo "      url: https://gitcode.com/openharmony-sig/flutter_packages.git" >> pubspec.yaml
           echo "      path: packages/shared_preferences/shared_preferences_ohos" >> pubspec.yaml
+
 
       - name: 获取依赖并编译鸿蒙 Release HAP
         continue-on-error: true
