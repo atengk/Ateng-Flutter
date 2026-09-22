@@ -1,0 +1,209 @@
+name: Multiplatform Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: '发布版本号 (例如 v1.0.0)'
+        required: false
+        default: 'v1.0.0'
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Java 环境
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 配置 Flutter 环境
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 生成 Android 工程结构
+        run: |
+          flutter config --no-analytics
+          flutter create . --platforms=android --org com.example
+
+      - name: 获取依赖
+        run: flutter pub get
+
+      - name: 编译 Android APK (Release)
+        run: flutter build apk --release
+
+      - name: 归档 Android APK
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk flutter-multiplatform-demo-android.apk
+
+      - name: 上传 Android 制品
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: flutter-multiplatform-demo-android.apk
+
+  build-web:
+    name: Build Web Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Flutter 环境
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 生成 Web 工程结构
+        run: |
+          flutter config --enable-web
+          flutter create . --platforms=web
+
+      - name: 获取依赖
+        run: flutter pub get
+
+      - name: 编译 Web 静态资源
+        run: flutter build web --release
+
+      - name: 打包 Web 制品为 ZIP
+        run: |
+          cd build/web
+          zip -r ../../flutter-multiplatform-demo-web.zip .
+          cd ../..
+
+      - name: 上传 Web 制品
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-zip
+          path: flutter-multiplatform-demo-web.zip
+
+  build-windows:
+    name: Build Windows Desktop
+    runs-on: windows-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Flutter 环境
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 生成 Windows 工程结构
+        shell: pwsh
+        run: |
+          flutter config --enable-windows-desktop
+          flutter create . --platforms=windows
+
+      - name: 获取依赖
+        shell: pwsh
+        run: flutter pub get
+
+      - name: 编译 Windows 桌面端
+        shell: pwsh
+        run: flutter build windows --release
+
+      - name: 打包 Windows 制品为 ZIP
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "flutter-multiplatform-demo-windows.zip"
+
+      - name: 上传 Windows 制品
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-zip
+          path: flutter-multiplatform-demo-windows.zip
+
+  build-linux:
+    name: Build Linux Desktop
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Linux 原生桌面编译依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
+
+      - name: 配置 Flutter 环境
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 生成 Linux 工程结构
+        run: |
+          flutter config --enable-linux-desktop
+          flutter create . --platforms=linux
+
+      - name: 获取依赖
+        run: flutter pub get
+
+      - name: 编译 Linux 桌面端
+        run: flutter build linux --release
+
+      - name: 打包 Linux 制品为 ZIP
+        run: |
+          cd build/linux/x64/release/bundle
+          zip -r ../../../../../flutter-multiplatform-demo-linux.zip .
+          cd ../../../../..
+
+      - name: 上传 Linux 制品
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-zip
+          path: flutter-multiplatform-demo-linux.zip
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: [build-android, build-web, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 创建产物接收目录
+        run: mkdir -p ./artifacts
+
+      - name: 下载全部平台制品
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+          merge-multiple: true
+
+      - name: 检查收集到的发布制品清单
+        run: ls -lh ./artifacts
+
+      - name: 确定发布标签
+        id: get_tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 发布至 GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_tag.outputs.tag }}
+          name: Release ${{ steps.get_tag.outputs.tag }}
+          files: ./artifacts/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
