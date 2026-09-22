@@ -5,16 +5,32 @@ on:
     branches: [ master, main ]
     tags:
       - 'v*'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
   pull_request:
     branches: [ master, main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
   workflow_dispatch:
     inputs:
       tag_name:
-        description: '发布版本号 (例如 v1.0.3)'
+        description: '发布版本号 (例如 v1.0.5)'
         required: false
-        default: 'v1.0.3'
+        default: 'v1.0.5'
 
-# 并发防抖与自动取消：同一分支或标签有新提交时，自动取消旧构建
+# 权限最小化原则
+permissions:
+  contents: read
+
+# 全局常量定义
+env:
+  APP_NAME: flutter-multiplatform-demo
+
+# 并发防抖与自动取消：同一分支或标签有新提交触发时，自动取消旧在途任务
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -26,6 +42,7 @@ jobs:
   lint-and-test:
     name: Lint & Test
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -56,10 +73,10 @@ jobs:
     needs: [lint-and-test]
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       tag: ${{ steps.meta.outputs.tag }}
       version: ${{ steps.meta.outputs.version }}
-      app_name: flutter-multiplatform-demo
     steps:
       - name: 解析版本号
         id: meta
@@ -77,24 +94,25 @@ jobs:
   # 阶段 2：全平台与全架构并行构建与专业打包
   # ========================================================
 
-  # 1. Android (Universal Fat APK)
+  # 1. Android (Universal Fat APK，开启 Gradle 依赖缓存)
   build-android:
     name: Build Android APK
     needs: [lint-and-test, resolve-meta]
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
-      APP_NAME: ${{ needs.resolve-meta.outputs.app_name }}
       VERSION: ${{ needs.resolve-meta.outputs.version }}
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: 配置 Java 环境
+      - name: 配置 Java 环境与 Gradle 缓存
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
+          cache: 'gradle'
 
       - name: 配置 Flutter 环境
         uses: subosito/flutter-action@v2
@@ -123,6 +141,7 @@ jobs:
         with:
           name: android-apk
           path: ${{ env.APP_NAME }}_${{ env.VERSION }}_android_universal.apk
+          retention-days: 1
 
   # 2. iOS (Unsigned .ipa 测试包)
   build-ios:
@@ -130,8 +149,8 @@ jobs:
     needs: [lint-and-test, resolve-meta]
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: macos-latest
+    timeout-minutes: 20
     env:
-      APP_NAME: ${{ needs.resolve-meta.outputs.app_name }}
       VERSION: ${{ needs.resolve-meta.outputs.version }}
     steps:
       - name: 检出代码
@@ -164,6 +183,7 @@ jobs:
         with:
           name: ios-ipa
           path: ${{ env.APP_NAME }}_${{ env.VERSION }}_ios_arm64.ipa
+          retention-days: 1
 
   # 3. Web 静态资源整包
   build-web:
@@ -171,8 +191,8 @@ jobs:
     needs: [lint-and-test, resolve-meta]
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
-      APP_NAME: ${{ needs.resolve-meta.outputs.app_name }}
       VERSION: ${{ needs.resolve-meta.outputs.version }}
     steps:
       - name: 检出代码
@@ -206,15 +226,16 @@ jobs:
         with:
           name: web-zip
           path: ${{ env.APP_NAME }}_${{ env.VERSION }}_web.zip
+          retention-days: 1
 
-  # 4. Windows 桌面端 (绿色便携包 + Inno Setup 标准向导安装包)
+  # 4. Windows 桌面端 (绿色便携包 + Inno Setup 原生简体中文向导安装包)
   build-windows:
     name: Build Windows Desktop & Installer
     needs: [lint-and-test, resolve-meta]
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
+    timeout-minutes: 20
     env:
-      APP_NAME: ${{ needs.resolve-meta.outputs.app_name }}
       VERSION: ${{ needs.resolve-meta.outputs.version }}
     steps:
       - name: 检出代码
@@ -249,7 +270,7 @@ jobs:
         run: |
           Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "$($env:APP_NAME)_$($env:VERSION)_windows_x64_portable.zip"
 
-      - name: 构建 Inno Setup 标准向导安装包
+      - name: 构建 Inno Setup 原生简体中文向导安装包
         shell: pwsh
         run: |
           $setupExeName = "$($env:APP_NAME)_$($env:VERSION)_windows_x64_setup"
@@ -265,6 +286,10 @@ jobs:
           SolidCompression=yes
           DisableProgramGroupPage=yes
 
+          [Languages]
+          Name: "chinesesimplified"; MessagesFile: ".github\installer\ChineseSimplified.isl"
+          Name: "english"; MessagesFile: "compiler:Default.isl"
+
           [Files]
           Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
@@ -273,9 +298,9 @@ jobs:
           Name: "{autodesktop}\Flutter Multiplatform Demo"; Filename: "{app}\flutter_multiplatform_demo.exe"; Tasks: desktopicon
 
           [Tasks]
-          Name: "desktopicon"; Description: "Create a desktop icon"; GroupDescription: "Additional icons:"
+          Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: "附加快捷方式:"
           "@
-          Set-Content -Path "installer.iss" -Value $issContent
+          Set-Content -Path "installer.iss" -Value $issContent -Encoding utf8
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
 
       - name: 上传 Windows 制品
@@ -285,6 +310,7 @@ jobs:
           path: |
             ${{ env.APP_NAME }}_${{ env.VERSION }}_windows_x64_setup.exe
             ${{ env.APP_NAME }}_${{ env.VERSION }}_windows_x64_portable.zip
+          retention-days: 1
 
   # 5. macOS 桌面端 (便携包 + 标准 DMG 挂载安装镜像)
   build-macos:
@@ -292,8 +318,8 @@ jobs:
     needs: [lint-and-test, resolve-meta]
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: macos-latest
+    timeout-minutes: 20
     env:
-      APP_NAME: ${{ needs.resolve-meta.outputs.app_name }}
       VERSION: ${{ needs.resolve-meta.outputs.version }}
     steps:
       - name: 检出代码
@@ -335,6 +361,7 @@ jobs:
           path: |
             ${{ env.APP_NAME }}_${{ env.VERSION }}_macos_universal.dmg
             ${{ env.APP_NAME }}_${{ env.VERSION }}_macos_universal.zip
+          retention-days: 1
 
   # 6. Linux 桌面端与双架构安装包 (x86_64 与 ARM64 双架构：DEB + RPM + TAR.GZ)
   build-linux:
@@ -354,8 +381,8 @@ jobs:
             deb_arch: arm64
             rpm_arch: aarch64
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
     env:
-      APP_NAME: ${{ needs.resolve-meta.outputs.app_name }}
       VERSION: ${{ needs.resolve-meta.outputs.version }}
     steps:
       - name: 检出代码
@@ -449,17 +476,22 @@ jobs:
             ${{ env.APP_NAME }}_${{ env.VERSION }}_linux_${{ matrix.arch }}_portable.tar.gz
             ${{ env.APP_NAME }}_${{ env.VERSION }}_linux_${{ matrix.deb_arch }}.deb
             ${{ env.APP_NAME }}-${{ env.VERSION }}-1.${{ matrix.rpm_arch }}.rpm
+          retention-days: 1
 
   # ========================================================
-  # 阶段 3：汇总所有平台制品，自动发布 GitHub Release
+  # 阶段 3：汇总所有平台制品，生成校验文件并自动发布 GitHub Release
   # ========================================================
   publish-release:
     name: Publish GitHub Release
     needs: [resolve-meta, build-android, build-ios, build-web, build-windows, build-macos, build-linux]
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write
+    env:
+      VERSION: ${{ needs.resolve-meta.outputs.version }}
+      TAG: ${{ needs.resolve-meta.outputs.tag }}
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -473,14 +505,46 @@ jobs:
           path: ./artifacts
           merge-multiple: true
 
+      - name: 生成 SHA-256 校验清单文件 (checksums.txt)
+        run: |
+          cd ./artifacts
+          sha256sum * > checksums.txt
+          cd ..
+
       - name: 检查收集到的全平台发布制品清单
         run: ls -lh ./artifacts
+
+      - name: 动态生成结构化 Release 说明文档
+        run: |
+          cat << 'EOF' > release_notes.md
+          ## 📦 全平台制品下载指引 (Release Downloads)
+
+          | 操作系统 / 生态 | 架构 | 安装器 / 下载文件 | 格式 | 说明 |
+          | :--- | :--- | :--- | :---: | :--- |
+          | 🪟 **Windows** | x64 | `${APP_NAME}_${VERSION}_windows_x64_setup.exe`<br>`${APP_NAME}_${VERSION}_windows_x64_portable.zip` | `.exe`<br>`.zip` | **Inno Setup 原生简体中文安装向导**<br>绿色免安装便携包 |
+          | 🍎 **macOS** | Universal | `${APP_NAME}_${VERSION}_macos_universal.dmg`<br>`${APP_NAME}_${VERSION}_macos_universal.zip` | `.dmg`<br>`.zip` | **标准挂载磁盘安装镜像 (含拖拽安装)**<br>App Bundle 绿色包 |
+          | 📱 **iOS** | arm64 | `${APP_NAME}_${VERSION}_ios_arm64.ipa` | `.ipa` | 未签名标准安装包 (支持 TrollStore / 自签) |
+          | 🤖 **Android** | Universal | `${APP_NAME}_${VERSION}_android_universal.apk` | `.apk` | 生产环境 Release 胖包 (内置全架构原生库) |
+          | 🌐 **Web** | Web | `${APP_NAME}_${VERSION}_web.zip` | `.zip` | 包含静态 HTML/JS/Wasm 资源的网站整包 |
+          | 🐧 **Linux (PC/服务器)** | x86_64 | `${APP_NAME}_${VERSION}_linux_amd64.deb`<br>`${APP_NAME}-${VERSION}-1.x86_64.rpm`<br>`${APP_NAME}_${VERSION}_linux_x86_64_portable.tar.gz` | `.deb`<br>`.rpm`<br>`.tar.gz` | **Debian/Ubuntu 官方规范安装包**<br>**RedHat/CentOS/Fedora 规范安装包**<br>保留 0755 权限的绿色包 |
+          | 🐉 **Linux (信创/树莓派)** | arm64 | `${APP_NAME}_${VERSION}_linux_arm64.deb`<br>`${APP_NAME}-${VERSION}-1.aarch64.rpm`<br>`${APP_NAME}_${VERSION}_linux_arm64_portable.tar.gz` | `.deb`<br>`.rpm`<br>`.tar.gz` | **统信 UOS / 银河麒麟信创标准包**<br>**openEuler / RedHat ARM 规范包**<br>树莓派/ARM64 绿色包 |
+
+          ### 🔒 产物完整性校验 (SHA-256 Checksums)
+          本发布页包含所有二进制产物的哈希校验文件 `checksums.txt`，供防篡改与完整性核对：
+          - **Linux / macOS 校验命令**：`sha256sum -c checksums.txt`
+          - **Windows PowerShell 校验**：`Get-FileHash <文件名> -Algorithm SHA256`
+
+          ---
+          EOF
+          sed -i "s/\${APP_NAME}/$APP_NAME/g" release_notes.md
+          sed -i "s/\${VERSION}/$VERSION/g" release_notes.md
 
       - name: 发布至 GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.resolve-meta.outputs.tag }}
-          name: Release ${{ needs.resolve-meta.outputs.tag }}
+          tag_name: ${{ env.TAG }}
+          name: Release ${{ env.TAG }}
+          body_path: release_notes.md
           files: ./artifacts/*
           draft: false
           prerelease: false
