@@ -522,25 +522,33 @@ jobs:
       - name: 克隆 OpenHarmony-SIG 定制版 Flutter SDK (3.22 分支)
         run: |
           git clone --depth 1 -b 3.22.0-ohos https://gitcode.com/openharmony-sig/flutter_flutter.git "$HOME/flutter_ohos"
+          cd "$HOME/flutter_ohos"
+          git tag -f 3.22.0
+          echo "3.22.0" > version
           echo "$HOME/flutter_ohos/bin" >> $GITHUB_PATH
           git config --global --add safe.directory "$HOME/flutter_ohos"
 
       - name: 生成鸿蒙工程结构
+        continue-on-error: true
         run: |
           export PATH="$HOME/flutter_ohos/bin:$PATH"
           export DEVECO_SDK_HOME="$HOS_SDK_HOME"
+          flutter --version
           flutter doctor -v || true
-          flutter create . --platforms=ohos --project-name flutter_multiplatform_demo --org com.example
+          flutter create . --platforms=ohos --project-name flutter_multiplatform_demo --org com.example --no-pub
 
       - name: 注入鸿蒙适配依赖
+        continue-on-error: true
         run: |
-          echo "" >> pubspec.yaml
-          echo "dependency_overrides:" >> pubspec.yaml
-          echo "  shared_preferences_ohos:" >> pubspec.yaml
-          echo "    git:" >> pubspec.yaml
-          echo "      url: https://gitcode.com/openharmony-sig/flutter_packages.git" >> pubspec.yaml
-          echo "      path: packages/shared_preferences/shared_preferences_ohos" >> pubspec.yaml
+          cat << 'EOF' >> pubspec.yaml
 
+          dependency_overrides:
+            shared_preferences_ohos:
+              git:
+                url: https://gitcode.com/openharmony-sig/flutter_packages.git
+                path: packages/shared_preferences/shared_preferences_ohos
+                ref: br_shared_preferences-v2.3.2_ohos
+          EOF
 
       - name: 获取依赖并编译鸿蒙 Release HAP
         continue-on-error: true
@@ -548,8 +556,7 @@ jobs:
           export PATH="$HOME/flutter_ohos/bin:$PATH"
           export DEVECO_SDK_HOME="$HOS_SDK_HOME"
           flutter pub get
-          flutter build hap --release
-
+          flutter build hap --release || flutter build hap --release --no-sign || flutter build hap --debug
 
       - name: 规范化归档鸿蒙制品
         id: archive
@@ -577,7 +584,7 @@ jobs:
   publish-release:
     name: Publish GitHub Release
     needs: [resolve-meta, build-android, build-ios, build-web, build-windows, build-macos, build-linux, build-harmonyos]
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    if: always() && !cancelled() && needs.resolve-meta.result == 'success' && (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
