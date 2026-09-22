@@ -1,29 +1,40 @@
-/// MultiPlatformApp 冒烟与组件交互单元测试
+/// DevToolbox 应用冒烟与核心组件渲染单元测试
 ///
 /// @author Ateng
 /// @since 2026-09-22
 library;
 
-import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:flutter_multiplatform_demo/core/constants/app_constants.dart';
 import 'package:flutter_multiplatform_demo/main.dart';
 
 void main() {
-  testWidgets('计数器自增功能冒烟测试', (WidgetTester tester) async {
-    // 1. 构建主组件树并触发一帧渲染
-    await tester.pumpWidget(const MultiPlatformApp());
+  testWidgets('DevToolbox 应用启动与主导航冒烟测试', (WidgetTester tester) async {
+    // 1. 构建主组件树并挂载 ProviderScope
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: DevToolboxApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-    // 2. 验证初始状态下计数为 0，且不存在 1
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // 2. 验证顶部应用标题与版本标签正常渲染
+    expect(find.text(AppConstants.appTitle), findsOneWidget);
+    expect(find.text(AppConstants.appVersion), findsOneWidget);
 
-    // 3. 点击递增悬浮按钮并重新调度渲染
-    await tester.tap(find.byType(FloatingActionButton));
-    await tester.pump();
+    // 3. 验证微工具工坊默认渲染与 JSON 格式化按钮
+    expect(find.text('微工具工坊 (Toolbox Studio)'), findsOneWidget);
+    expect(find.text('美化格式化'), findsOneWidget);
 
-    // 4. 验证计数器数值已变为 1
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // 4. 切换到操作看板 Tab
+    final historyTab = find.text('操作看板');
+    expect(historyTab, findsWidgets);
+    await tester.tap(historyTab.first);
+    await tester.pumpAndSettle();
+
+    // 5. 验证操作看板成功激活
+    expect(find.text('操作历史与统计 (Activity & History)'), findsOneWidget);
   });
 }
