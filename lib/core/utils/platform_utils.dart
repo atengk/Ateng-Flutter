@@ -81,16 +81,17 @@ class PlatformUtils {
           isDesktop: false,
           isWeb: false,
         );
-      case TargetPlatform.fuchsia:
-        return const PlatformInfo(
-          osName: 'Fuchsia 系统',
-          icon: Icons.device_unknown,
-          isDesktop: false,
-          isWeb: false,
-        );
       default:
+        if (defaultTargetPlatform.name == 'ohos') {
+          return const PlatformInfo(
+            osName: 'HarmonyOS NEXT 鸿蒙系统',
+            icon: Icons.phone_android,
+            isDesktop: false,
+            isWeb: false,
+          );
+        }
         return const PlatformInfo(
-          osName: 'HarmonyOS NEXT 鸿蒙系统',
+          osName: '其他操作系统',
           icon: Icons.devices_other,
           isDesktop: false,
           isWeb: false,
