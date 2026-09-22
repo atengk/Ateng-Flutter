@@ -167,9 +167,43 @@ jobs:
           name: linux-zip
           path: flutter-multiplatform-demo-linux.zip
 
+  build-macos:
+    name: Build macOS Desktop
+    runs-on: macos-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Flutter 环境
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 生成 macOS 工程结构
+        run: |
+          flutter config --enable-macos-desktop
+          flutter create . --platforms=macos
+
+      - name: 获取依赖
+        run: flutter pub get
+
+      - name: 编译 macOS 桌面端
+        run: flutter build macos --release --no-codesign
+
+      - name: 打包 macOS 制品为 ZIP
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent build/macos/Build/Products/Release/flutter_multiplatform_demo.app flutter-multiplatform-demo-macos.zip
+
+      - name: 上传 macOS 制品
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-zip
+          path: flutter-multiplatform-demo-macos.zip
+
   publish-release:
     name: Publish GitHub Release
-    needs: [build-android, build-web, build-windows, build-linux]
+    needs: [build-android, build-web, build-windows, build-linux, build-macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write

@@ -10,6 +10,7 @@
 | **Web** | `web-release.zip` | `.zip` | 包含静态 HTML/JS/Wasm 资源的网站压缩包 |
 | **Windows** | `windows-release.zip` | `.zip` | Windows 桌面可执行程序及依赖库压缩包 |
 | **Linux** | `linux-release.zip` | `.zip` | Linux 桌面可执行程序及依赖压缩包 |
+| **macOS** | `flutter-multiplatform-demo-macos.zip` | `.zip` | macOS 桌面 App Bundle 独立运行包 |
 
 ---
 
@@ -24,10 +25,10 @@
 
 ### 2. 多平台自动打包与制品发布流水线 (`release.yml`)
 - **触发条件**：
-  - 推送版本标签（例如 `git tag v1.0.0 && git push origin v1.0.0`）。
+  - 推送版本标签（例如 `git tag v1.0.1 && git push origin v1.0.1`）。
   - 支持在 GitHub Actions 页面手动点击触发 (`workflow_dispatch`)。
 - **阶段动作**：
-  1. 并行启动多平台构建矩阵（Android、Web、Windows、Linux）。
+  1. 并行启动五大平台构建矩阵（Android、Web、Windows、Linux、macOS）。
   2. 自动补充平台原生骨架并完成生产打包。
   3. 将各平台制品打包并归档。
   4. 最终汇总所有平台产物，自动创建 GitHub Release 并附加所有二进制制品。
