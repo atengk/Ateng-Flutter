@@ -189,7 +189,7 @@ jobs:
         run: flutter pub get
 
       - name: 编译 macOS 桌面端
-        run: flutter build macos --release --no-codesign
+        run: flutter build macos --release
 
       - name: 打包 macOS 制品为 ZIP
         run: |
