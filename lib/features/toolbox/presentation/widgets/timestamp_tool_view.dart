@@ -87,7 +87,8 @@ class _TimestampToolViewState extends ConsumerState<TimestampToolView> {
 
     final res = _formatter.format(date);
     setState(() {
-      _tsConvertResult = '$res (本地时间)\n${_formatter.format(date.toUtc())} (UTC)';
+      _tsConvertResult =
+          '$res (本地时间)\n${_formatter.format(date.toUtc())} (UTC)';
     });
 
     ref.read(historyProvider.notifier).addRecord(

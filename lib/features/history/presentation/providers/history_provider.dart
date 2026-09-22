@@ -116,9 +116,8 @@ class HistoryNotifier extends StateNotifier<HistoryState> {
     required String output,
   }) async {
     final inputTrim = input.trim();
-    final inputSummary = inputTrim.length > 50
-        ? '${inputTrim.substring(0, 50)}...'
-        : inputTrim;
+    final inputSummary =
+        inputTrim.length > 50 ? '${inputTrim.substring(0, 50)}...' : inputTrim;
 
     final newItem = HistoryItem(
       id: 'record-${DateTime.now().millisecondsSinceEpoch}',
