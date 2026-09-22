@@ -12,7 +12,7 @@ class AppConstants {
   static const String appTitle = 'DevToolbox 开发者微工具箱';
 
   /// 应用简短版本号
-  static const String appVersion = 'v1.0.5';
+  static const String appVersion = 'v1.0.6';
 
   /// GitHub 源码仓库地址
   static const String repoUrl =
