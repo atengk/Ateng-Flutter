@@ -14,7 +14,7 @@ on:
         required: false
         default: 'v1.0.3'
 
-# 解决重复运行与资源浪费：同一分支或标签有新构建触发时，自动取消旧的在途任务
+# 并发防抖与自动取消：同一分支或标签有新提交时，自动取消旧构建
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -49,15 +49,43 @@ jobs:
         run: flutter test
 
   # ========================================================
-  # 阶段 2：多平台与多架构并行构建 (仅在推送版本标签或手动触发时执行)
+  # 阶段 1.5：版本号与元数据解析 (仅在发布时执行)
+  # ========================================================
+  resolve-meta:
+    name: Resolve Version Metadata
+    needs: [lint-and-test]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+      app_name: flutter-multiplatform-demo
+    steps:
+      - name: 解析版本号
+        id: meta
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag_name }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+  # ========================================================
+  # 阶段 2：全平台与全架构并行构建与专业打包
   # ========================================================
 
   # 1. Android (Universal Fat APK)
   build-android:
     name: Build Android APK
-    needs: [lint-and-test]
+    needs: [lint-and-test, resolve-meta]
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    env:
+      APP_NAME: ${{ needs.resolve-meta.outputs.app_name }}
+      VERSION: ${{ needs.resolve-meta.outputs.version }}
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -85,21 +113,26 @@ jobs:
       - name: 编译 Android APK (Release)
         run: flutter build apk --release
 
-      - name: 归档 Android APK
-        run: cp build/app/outputs/flutter-apk/app-release.apk flutter-multiplatform-demo-android.apk
+      - name: 规范化归档 Android 制品
+        run: |
+          ARTIFACT_NAME="${APP_NAME}_${VERSION}_android_universal.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "$ARTIFACT_NAME"
 
       - name: 上传 Android 制品
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: flutter-multiplatform-demo-android.apk
+          path: ${{ env.APP_NAME }}_${{ env.VERSION }}_android_universal.apk
 
   # 2. iOS (Unsigned .ipa 测试包)
   build-ios:
     name: Build iOS IPA
-    needs: [lint-and-test]
+    needs: [lint-and-test, resolve-meta]
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: macos-latest
+    env:
+      APP_NAME: ${{ needs.resolve-meta.outputs.app_name }}
+      VERSION: ${{ needs.resolve-meta.outputs.version }}
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -119,25 +152,28 @@ jobs:
       - name: 编译 iOS (Release, No CodeSign)
         run: flutter build ios --release --no-codesign
 
-      - name: 打包为未签名 IPA
+      - name: 规范化打包为未签名 IPA
         run: |
           mkdir -p Payload
           cp -r build/ios/iphoneos/Runner.app Payload/
-          zip -r flutter-multiplatform-demo-ios.ipa Payload
+          zip -r "${APP_NAME}_${VERSION}_ios_arm64.ipa" Payload
           rm -rf Payload
 
       - name: 上传 iOS 制品
         uses: actions/upload-artifact@v4
         with:
           name: ios-ipa
-          path: flutter-multiplatform-demo-ios.ipa
+          path: ${{ env.APP_NAME }}_${{ env.VERSION }}_ios_arm64.ipa
 
-  # 3. Web 静态资源包
+  # 3. Web 静态资源整包
   build-web:
     name: Build Web Package
-    needs: [lint-and-test]
+    needs: [lint-and-test, resolve-meta]
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    env:
+      APP_NAME: ${{ needs.resolve-meta.outputs.app_name }}
+      VERSION: ${{ needs.resolve-meta.outputs.version }}
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -159,29 +195,32 @@ jobs:
       - name: 编译 Web 静态资源
         run: flutter build web --release
 
-      - name: 打包 Web 制品为 ZIP
+      - name: 规范化打包 Web 制品
         run: |
           cd build/web
-          zip -r ../../flutter-multiplatform-demo-web.zip .
+          zip -r "../../${APP_NAME}_${VERSION}_web.zip" .
           cd ../..
 
       - name: 上传 Web 制品
         uses: actions/upload-artifact@v4
         with:
           name: web-zip
-          path: flutter-multiplatform-demo-web.zip
+          path: ${{ env.APP_NAME }}_${{ env.VERSION }}_web.zip
 
-  # 4. Windows 桌面端 (绿色 ZIP + Inno Setup 安装包)
+  # 4. Windows 桌面端 (绿色便携包 + Inno Setup 标准向导安装包)
   build-windows:
     name: Build Windows Desktop & Installer
-    needs: [lint-and-test]
+    needs: [lint-and-test, resolve-meta]
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
+    env:
+      APP_NAME: ${{ needs.resolve-meta.outputs.app_name }}
+      VERSION: ${{ needs.resolve-meta.outputs.version }}
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: 安装 Inno Setup 打包器
+      - name: 安装 Inno Setup 编译器
         shell: pwsh
         run: choco install innosetup --no-progress
 
@@ -208,19 +247,20 @@ jobs:
       - name: 打包 Windows 绿色便携 ZIP
         shell: pwsh
         run: |
-          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "flutter-multiplatform-demo-windows.zip"
+          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "$($env:APP_NAME)_$($env:VERSION)_windows_x64_portable.zip"
 
-      - name: 构建 Inno Setup 安装向导 (Setup.exe)
+      - name: 构建 Inno Setup 标准向导安装包
         shell: pwsh
         run: |
+          $setupExeName = "$($env:APP_NAME)_$($env:VERSION)_windows_x64_setup"
           $issContent = @"
           [Setup]
           AppName=Flutter Multiplatform Demo
-          AppVersion=1.0.0
+          AppVersion=$($env:VERSION)
           DefaultDirName={autopf}\FlutterMultiplatformDemo
           DefaultGroupName=Flutter Multiplatform Demo
           OutputDir=.
-          OutputBaseFilename=flutter-multiplatform-demo-windows-setup
+          OutputBaseFilename=$setupExeName
           Compression=lzma
           SolidCompression=yes
           DisableProgramGroupPage=yes
@@ -243,15 +283,18 @@ jobs:
         with:
           name: windows-artifacts
           path: |
-            flutter-multiplatform-demo-windows.zip
-            flutter-multiplatform-demo-windows-setup.exe
+            ${{ env.APP_NAME }}_${{ env.VERSION }}_windows_x64_setup.exe
+            ${{ env.APP_NAME }}_${{ env.VERSION }}_windows_x64_portable.zip
 
-  # 5. macOS 桌面端 (绿色 ZIP + 标准 DMG 磁盘安装镜像)
+  # 5. macOS 桌面端 (便携包 + 标准 DMG 挂载安装镜像)
   build-macos:
     name: Build macOS Desktop & DMG
-    needs: [lint-and-test]
+    needs: [lint-and-test, resolve-meta]
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: macos-latest
+    env:
+      APP_NAME: ${{ needs.resolve-meta.outputs.app_name }}
+      VERSION: ${{ needs.resolve-meta.outputs.version }}
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -273,16 +316,16 @@ jobs:
       - name: 编译 macOS 桌面端
         run: flutter build macos --release
 
-      - name: 打包 macOS 便携 ZIP
+      - name: 打包 macOS 便携 ZIP (保留符号链接)
         run: |
-          ditto -c -k --sequesterRsrc --keepParent build/macos/Build/Products/Release/flutter_multiplatform_demo.app flutter-multiplatform-demo-macos.zip
+          ditto -c -k --sequesterRsrc --keepParent build/macos/Build/Products/Release/flutter_multiplatform_demo.app "${APP_NAME}_${VERSION}_macos_universal.zip"
 
-      - name: 制作 macOS 标准 DMG 挂载安装镜像
+      - name: 制作 macOS 标准 DMG 磁盘镜像
         run: |
           mkdir -p dmg_root
           cp -R "build/macos/Build/Products/Release/flutter_multiplatform_demo.app" dmg_root/
           ln -s /Applications dmg_root/Applications
-          hdiutil create -volname "Flutter Multiplatform Demo" -srcfolder dmg_root -ov -format UDZO flutter-multiplatform-demo-macos.dmg
+          hdiutil create -volname "Flutter Multiplatform Demo" -srcfolder dmg_root -ov -format UDZO "${APP_NAME}_${VERSION}_macos_universal.dmg"
           rm -rf dmg_root
 
       - name: 上传 macOS 制品
@@ -290,24 +333,29 @@ jobs:
         with:
           name: macos-artifacts
           path: |
-            flutter-multiplatform-demo-macos.zip
-            flutter-multiplatform-demo-macos.dmg
+            ${{ env.APP_NAME }}_${{ env.VERSION }}_macos_universal.dmg
+            ${{ env.APP_NAME }}_${{ env.VERSION }}_macos_universal.zip
 
-  # 6. Linux 桌面端与双架构安装包 (x86_64 与 ARM64 双架构矩阵：DEB + RPM + ZIP)
+  # 6. Linux 桌面端与双架构安装包 (x86_64 与 ARM64 双架构：DEB + RPM + TAR.GZ)
   build-linux:
     name: Build Linux (${{ matrix.arch }})
-    needs: [lint-and-test]
+    needs: [lint-and-test, resolve-meta]
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     strategy:
       matrix:
         include:
           - arch: x86_64
             runner: ubuntu-latest
-            fpm_arch: x86_64
+            deb_arch: amd64
+            rpm_arch: x86_64
           - arch: arm64
             runner: ubuntu-24.04-arm
-            fpm_arch: aarch64
+            deb_arch: arm64
+            rpm_arch: aarch64
     runs-on: ${{ matrix.runner }}
+    env:
+      APP_NAME: ${{ needs.resolve-meta.outputs.app_name }}
+      VERSION: ${{ needs.resolve-meta.outputs.version }}
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -341,13 +389,13 @@ jobs:
           BUNDLE_DIR=$(find build/linux -type d -name "bundle" | head -n 1)
           echo "dir=$BUNDLE_DIR" >> $GITHUB_OUTPUT
 
-      - name: 打包 Linux 便携 ZIP
+      - name: 打包 Linux 绿色便携 TAR.GZ (保留执行权限)
         run: |
           cd "${{ steps.bundle.outputs.dir }}"
-          zip -r "$GITHUB_WORKSPACE/flutter-multiplatform-demo-linux-${{ matrix.arch }}.zip" .
+          tar -czvf "$GITHUB_WORKSPACE/${APP_NAME}_${VERSION}_linux_${{ matrix.arch }}_portable.tar.gz" *
           cd "$GITHUB_WORKSPACE"
 
-      - name: 打包 Linux DEB 与 RPM 安装包
+      - name: 按照官方规范打包 DEB 与 RPM 安装包
         run: |
           mkdir -p pkg_root/opt/flutter_multiplatform_demo pkg_root/usr/bin pkg_root/usr/share/applications
           cp -r "${{ steps.bundle.outputs.dir }}"/* pkg_root/opt/flutter_multiplatform_demo/
@@ -363,37 +411,42 @@ jobs:
           Categories=Utility;
           EOF
 
+          # Debian 官方规范命名: <name>_<version>_<arch>.deb
+          DEB_NAME="${APP_NAME}_${VERSION}_linux_${{ matrix.deb_arch }}.deb"
           fpm -s dir -t deb \
             -n flutter-multiplatform-demo \
-            -v 1.0.0 \
-            -a ${{ matrix.fpm_arch }} \
+            -v "${VERSION}" \
+            -a "${{ matrix.deb_arch }}" \
             --description "Flutter Multiplatform Demo Application" \
             -C pkg_root \
-            -p "flutter-multiplatform-demo-linux-${{ matrix.arch }}.deb"
+            -p "$DEB_NAME"
 
+          # RedHat RPM 官方规范命名: <name>-<version>-<release>.<arch>.rpm
+          RPM_NAME="${APP_NAME}-${VERSION}-1.${{ matrix.rpm_arch }}.rpm"
           fpm -s dir -t rpm \
             -n flutter-multiplatform-demo \
-            -v 1.0.0 \
-            -a ${{ matrix.fpm_arch }} \
+            -v "${VERSION}" \
+            -a "${{ matrix.rpm_arch }}" \
+            --iteration 1 \
             --description "Flutter Multiplatform Demo Application" \
             -C pkg_root \
-            -p "flutter-multiplatform-demo-linux-${{ matrix.arch }}.rpm"
+            -p "$RPM_NAME"
 
       - name: 上传 Linux 制品
         uses: actions/upload-artifact@v4
         with:
           name: linux-${{ matrix.arch }}-artifacts
           path: |
-            flutter-multiplatform-demo-linux-${{ matrix.arch }}.zip
-            flutter-multiplatform-demo-linux-${{ matrix.arch }}.deb
-            flutter-multiplatform-demo-linux-${{ matrix.arch }}.rpm
+            ${{ env.APP_NAME }}_${{ env.VERSION }}_linux_${{ matrix.arch }}_portable.tar.gz
+            ${{ env.APP_NAME }}_${{ env.VERSION }}_linux_${{ matrix.deb_arch }}.deb
+            ${{ env.APP_NAME }}-${{ env.VERSION }}-1.${{ matrix.rpm_arch }}.rpm
 
   # ========================================================
-  # 阶段 3：汇总所有平台与架构制品，自动发布 GitHub Release
+  # 阶段 3：汇总所有平台制品，自动发布 GitHub Release
   # ========================================================
   publish-release:
     name: Publish GitHub Release
-    needs: [build-android, build-ios, build-web, build-windows, build-macos, build-linux]
+    needs: [resolve-meta, build-android, build-ios, build-web, build-windows, build-macos, build-linux]
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
@@ -414,20 +467,11 @@ jobs:
       - name: 检查收集到的全平台发布制品清单
         run: ls -lh ./artifacts
 
-      - name: 确定发布标签
-        id: get_tag
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          fi
-
       - name: 发布至 GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.get_tag.outputs.tag }}
-          name: Release ${{ steps.get_tag.outputs.tag }}
+          tag_name: ${{ needs.resolve-meta.outputs.tag }}
+          name: Release ${{ needs.resolve-meta.outputs.tag }}
           files: ./artifacts/*
           draft: false
           prerelease: false
