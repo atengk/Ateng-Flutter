@@ -536,14 +536,13 @@ jobs:
       - name: 注入鸿蒙适配依赖
         continue-on-error: true
         run: |
-          cat << 'EOF' >> pubspec.yaml
+          echo "" >> pubspec.yaml
+          echo "dependency_overrides:" >> pubspec.yaml
+          echo "  shared_preferences_ohos:" >> pubspec.yaml
+          echo "    git:" >> pubspec.yaml
+          echo "      url: https://gitee.com/openharmony-sig/flutter_packages.git" >> pubspec.yaml
+          echo "      path: packages/shared_preferences/shared_preferences_ohos" >> pubspec.yaml
 
-dependency_overrides:
-  shared_preferences_ohos:
-    git:
-      url: https://gitee.com/openharmony-sig/flutter_packages.git
-      path: packages/shared_preferences/shared_preferences_ohos
-EOF
 
       - name: 获取依赖并编译鸿蒙 Release HAP
         continue-on-error: true
