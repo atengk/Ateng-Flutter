@@ -14,24 +14,23 @@
 
 ---
 
-## 自动化流水线 (CI/CD)
+## 自动化流水线 (`pipeline.yml`)
 
-### 1. 质量检测流水线 (`ci.yml`)
-- **触发条件**：向 `master` / `main` 分支提交代码或创建 Pull Request。
+项目采用统一的高内聚 CI/CD 流水线，并配置并发防抖机制（`cancel-in-progress: true`），彻底消除重复运行与无效资源消耗。
+
+### 1. 质量门禁阶段 (Lint & Test)
+- **触发条件**：向 `master` / `main` 分支提交代码、创建 Pull Request，或推送版本标签。
 - **阶段动作**：
   1. 代码格式检查 (`dart format`)
   2. 静态分析 (`flutter analyze`)
   3. 单元测试 (`flutter test`)
 
-### 2. 多平台自动打包与制品发布流水线 (`release.yml`)
-- **触发条件**：
-  - 推送版本标签（例如 `git tag v1.0.1 && git push origin v1.0.1`）。
-  - 支持在 GitHub Actions 页面手动点击触发 (`workflow_dispatch`)。
+### 2. 多平台自动打包与发布阶段 (Build & Release)
+- **触发条件**：仅在**推送版本标签**（如 `v1.0.3`）或手动触发 (`workflow_dispatch`) 且**门禁测试全部通过**后执行。
 - **阶段动作**：
   1. 并行启动五大平台构建矩阵（Android、Web、Windows、Linux、macOS）。
-  2. 自动补充平台原生骨架并完成生产打包。
-  3. 将各平台制品打包并归档。
-  4. 最终汇总所有平台产物，自动创建 GitHub Release 并附加所有二进制制品。
+  2. 自动补充平台原生骨架并完成生产打包与制品压缩。
+  3. 最终汇总五大平台产物，自动创建 GitHub Release 并上传所有二进制制品。
 
 ---
 

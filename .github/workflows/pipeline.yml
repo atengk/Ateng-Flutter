@@ -1,19 +1,56 @@
-name: Multiplatform Release
+name: CI/CD Pipeline
 
 on:
   push:
+    branches: [ master, main ]
     tags:
       - 'v*'
+  pull_request:
+    branches: [ master, main ]
   workflow_dispatch:
     inputs:
       tag_name:
-        description: '发布版本号 (例如 v1.0.0)'
+        description: '发布版本号 (例如 v1.0.3)'
         required: false
-        default: 'v1.0.0'
+        default: 'v1.0.3'
+
+# 解决重复运行与资源浪费：同一分支或标签有新构建触发时，自动取消旧的排队/进行中任务
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
+  # 阶段 1：质量检测门禁 (Lint & Test)
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Flutter 环境
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 获取依赖
+        run: flutter pub get
+
+      - name: 代码格式检查
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: 静态代码分析
+        run: flutter analyze
+
+      - name: 运行单元测试
+        run: flutter test
+
+  # 阶段 2：多平台并行打包构建 (仅在推送版本标签或手动触发，且门禁测试通过后执行)
   build-android:
     name: Build Android APK
+    needs: [lint-and-test]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: 检出代码
@@ -43,8 +80,7 @@ jobs:
         run: flutter build apk --release
 
       - name: 归档 Android APK
-        run: |
-          cp build/app/outputs/flutter-apk/app-release.apk flutter-multiplatform-demo-android.apk
+        run: cp build/app/outputs/flutter-apk/app-release.apk flutter-multiplatform-demo-android.apk
 
       - name: 上传 Android 制品
         uses: actions/upload-artifact@v4
@@ -54,6 +90,8 @@ jobs:
 
   build-web:
     name: Build Web Package
+    needs: [lint-and-test]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: 检出代码
@@ -90,6 +128,8 @@ jobs:
 
   build-windows:
     name: Build Windows Desktop
+    needs: [lint-and-test]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     steps:
       - name: 检出代码
@@ -128,6 +168,8 @@ jobs:
 
   build-linux:
     name: Build Linux Desktop
+    needs: [lint-and-test]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: 检出代码
@@ -169,6 +211,8 @@ jobs:
 
   build-macos:
     name: Build macOS Desktop
+    needs: [lint-and-test]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: macos-latest
     steps:
       - name: 检出代码
@@ -201,9 +245,11 @@ jobs:
           name: macos-zip
           path: flutter-multiplatform-demo-macos.zip
 
+  # 阶段 3：汇总所有平台制品并自动发布 GitHub Release
   publish-release:
     name: Publish GitHub Release
     needs: [build-android, build-web, build-windows, build-linux, build-macos]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: write
