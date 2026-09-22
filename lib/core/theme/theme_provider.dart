@@ -1,7 +1,7 @@
-/// 全局主题模式与强调色状态管理
+/// 全局主题模式与强调色状态管理，默认开启极客暗黑模式
 ///
 /// @author Ateng
-/// @since 2026-09-22
+/// @since 2026-09-23
 library;
 
 import 'package:flutter/material.dart';
@@ -47,11 +47,11 @@ class ThemeState {
 
 /// 主题状态控制器
 class ThemeNotifier extends StateNotifier<ThemeState> {
-  /// 构造函数并初始化加载配置
+  /// 构造函数并初始化加载配置（默认优先开启极客暗黑模式）
   ThemeNotifier()
       : super(
           const ThemeState(
-            mode: ThemeMode.system,
+            mode: ThemeMode.dark,
             seedColorIndex: 0,
           ),
         ) {
@@ -64,9 +64,12 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
     final modeName = prefs.getString(AppConstants.prefsThemeModeKey);
     final colorIndex = prefs.getInt(AppConstants.prefsSeedColorKey) ?? 0;
 
-    ThemeMode loadedMode = ThemeMode.system;
+    // 默认采用暗黑优先策略 (Dark-first by default)
+    ThemeMode loadedMode = ThemeMode.dark;
     if (modeName == 'light') {
       loadedMode = ThemeMode.light;
+    } else if (modeName == 'system') {
+      loadedMode = ThemeMode.system;
     } else if (modeName == 'dark') {
       loadedMode = ThemeMode.dark;
     }

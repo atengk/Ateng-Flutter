@@ -1,7 +1,7 @@
 /// 工具工坊主屏幕
 ///
 /// @author Ateng
-/// @since 2026-09-22
+/// @since 2026-09-23
 library;
 
 import 'package:flutter/material.dart';
@@ -29,17 +29,24 @@ class ToolboxScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SectionHeader(
+          const SectionHeader(
             title: '微工具工坊 (Toolbox Studio)',
             subtitle: '纯原生算法与免网络依赖的高频开发者轻量工具',
             icon: Icons.construction,
-            trailing: SegmentedButton<ToolType>(
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: SegmentedButton<ToolType>(
+              style: SegmentedButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
               segments: ToolType.values
                   .map(
                     (t) => ButtonSegment<ToolType>(
                       value: t,
                       label: Text(t.label),
-                      icon: Icon(t.icon, size: 16),
+                      icon: Icon(t.icon, size: 15),
                     ),
                   )
                   .toList(),
@@ -51,7 +58,7 @@ class ToolboxScreen extends ConsumerWidget {
               },
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Expanded(
             child: switch (currentTool) {
               ToolType.json => const JsonToolView(),
