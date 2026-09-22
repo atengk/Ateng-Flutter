@@ -557,6 +557,8 @@ jobs:
           export DEVECO_SDK_HOME="$HOS_SDK_HOME"
           flutter pub get
           flutter build hap --release || flutter build hap --release --no-sign || flutter build hap --debug
+          echo "=== 鸿蒙构建产物检索结果 ==="
+          find ohos -name "*.hap" || true
 
       - name: 规范化归档鸿蒙制品
         id: archive

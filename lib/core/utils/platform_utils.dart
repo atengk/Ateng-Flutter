@@ -88,6 +88,13 @@ class PlatformUtils {
           isDesktop: false,
           isWeb: false,
         );
+      default:
+        return const PlatformInfo(
+          osName: 'HarmonyOS NEXT 鸿蒙系统',
+          icon: Icons.devices_other,
+          isDesktop: false,
+          isWeb: false,
+        );
     }
   }
 }
