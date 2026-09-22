@@ -168,6 +168,7 @@ lib/
   - **macOS**：输出 `.dmg` (原生挂载拖拽镜像) 与 `.zip` 便携包。
   - **iOS**：输出 `.ipa` (未签名标准测试包)。
   - **Android**：输出 Universal Fat APK (内置全芯片原生库)。
+  - **HarmonyOS NEXT**：输出 `.hap` (纯血鸿蒙/OpenHarmony 标准测试安装包)。
   - **Web**：输出静态部署整包 `.zip`。
   - **Linux**：必须兼顾 `x86_64` (PC/服务器) 与 `arm64` (信创/树莓派)，双架构各自产出 `.deb`、`.rpm` 与保留 `0755` 权限的 `.tar.gz`。
 - **完整性校验**：所有正式发布必须自动计算并生成 `checksums.txt` (SHA-256 哈希散列)。

@@ -477,13 +477,113 @@ jobs:
             ${{ env.APP_NAME }}-${{ env.VERSION }}-1.${{ matrix.rpm_arch }}.rpm
           retention-days: 1
 
+  # 7. HarmonyOS NEXT (纯血鸿蒙 / OpenHarmony HAP 安装包)
+  build-harmonyos:
+    name: Build HarmonyOS HAP
+    needs: [lint-and-test, resolve-meta]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    continue-on-error: true
+    env:
+      VERSION: ${{ needs.resolve-meta.outputs.version }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Node.js 运行环境
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: 配置 Java 17 运行环境
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 安装 Linux 原生编译与图形库依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev jq
+
+      - name: 安装并配置 HarmonyOS NEXT CLI 编译套件 (API 12+)
+        uses: ErBWs/setup-ohos@v2
+        with:
+          version: 6.1.1.280
+          cache: true
+
+      - name: 配置鸿蒙环境变量
+        run: |
+          echo "DEVECO_SDK_HOME=$HOS_SDK_HOME" >> $GITHUB_ENV
+          echo "TOOL_HOME=/home/runner/ohos-sdk/command-line-tools" >> $GITHUB_ENV
+
+      - name: 克隆 OpenHarmony-SIG 定制版 Flutter SDK
+        run: |
+          git clone --depth 1 -b master https://gitee.com/openharmony-sig/flutter_flutter.git "$HOME/flutter_ohos"
+          echo "$HOME/flutter_ohos/bin" >> $GITHUB_PATH
+          git config --global --add safe.directory "$HOME/flutter_ohos"
+
+      - name: 生成鸿蒙工程结构
+        run: |
+          export PATH="$HOME/flutter_ohos/bin:$PATH"
+          export DEVECO_SDK_HOME="$HOS_SDK_HOME"
+          flutter doctor -v || true
+          flutter create . --platforms=ohos --org com.example
+
+      - name: 注入鸿蒙适配依赖
+        run: |
+          cat << 'EOF' >> pubspec.yaml
+
+dependency_overrides:
+  shared_preferences_ohos:
+    git:
+      url: https://gitee.com/openharmony-sig/flutter_packages.git
+      path: packages/shared_preferences/shared_preferences_ohos
+EOF
+
+      - name: 获取依赖
+        run: |
+          export PATH="$HOME/flutter_ohos/bin:$PATH"
+          flutter pub get
+
+      - name: 编译鸿蒙 Release HAP
+        run: |
+          export PATH="$HOME/flutter_ohos/bin:$PATH"
+          export DEVECO_SDK_HOME="$HOS_SDK_HOME"
+          flutter build hap --release
+
+      - name: 规范化归档鸿蒙制品
+        run: |
+          HAP_FILE=$(find ohos -name "*.hap" 2>/dev/null | head -n 1)
+          if [ -n "$HAP_FILE" ] && [ -f "$HAP_FILE" ]; then
+            cp "$HAP_FILE" "${APP_NAME}_${VERSION}_harmonyos_arm64.hap"
+          else
+            echo "未找到生成的 HAP 产物"
+            exit 1
+          fi
+
+      - name: 上传鸿蒙制品
+        uses: actions/upload-artifact@v4
+        with:
+          name: harmonyos-hap
+          path: ${{ env.APP_NAME }}_${{ env.VERSION }}_harmonyos_arm64.hap
+          retention-days: 1
+
   # ========================================================
   # 阶段 3：汇总所有平台制品，生成校验文件并自动发布 GitHub Release
   # ========================================================
   publish-release:
     name: Publish GitHub Release
-    needs: [resolve-meta, build-android, build-ios, build-web, build-windows, build-macos, build-linux]
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    needs: [resolve-meta, build-android, build-ios, build-web, build-windows, build-macos, build-linux, build-harmonyos]
+    if: |
+      (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch') &&
+      needs.build-android.result == 'success' &&
+      needs.build-ios.result == 'success' &&
+      needs.build-web.result == 'success' &&
+      needs.build-windows.result == 'success' &&
+      needs.build-macos.result == 'success' &&
+      needs.build-linux.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -524,6 +624,7 @@ jobs:
           | 🍎 **macOS** | Universal | `${APP_NAME}_${VERSION}_macos_universal.dmg`<br>`${APP_NAME}_${VERSION}_macos_universal.zip` | `.dmg`<br>`.zip` | **标准挂载磁盘安装镜像 (含拖拽安装)**<br>App Bundle 绿色包 |
           | 📱 **iOS** | arm64 | `${APP_NAME}_${VERSION}_ios_arm64.ipa` | `.ipa` | 未签名标准安装包 (支持 TrollStore / 自签) |
           | 🤖 **Android** | Universal | `${APP_NAME}_${VERSION}_android_universal.apk` | `.apk` | 生产环境 Release 胖包 (内置全架构原生库) |
+          | 📱 **HarmonyOS NEXT** | arm64 | `${APP_NAME}_${VERSION}_harmonyos_arm64.hap` | `.hap` | **纯血鸿蒙 / OpenHarmony 标准安装包** (未签名测试包，支持真机/模拟器调试) |
           | 🌐 **Web** | Web | `${APP_NAME}_${VERSION}_web.zip` | `.zip` | 包含静态 HTML/JS/Wasm 资源的网站整包 |
           | 🐧 **Linux (PC/服务器)** | x86_64 | `${APP_NAME}_${VERSION}_linux_amd64.deb`<br>`${APP_NAME}-${VERSION}-1.x86_64.rpm`<br>`${APP_NAME}_${VERSION}_linux_x86_64_portable.tar.gz` | `.deb`<br>`.rpm`<br>`.tar.gz` | **Debian/Ubuntu 官方规范安装包**<br>**RedHat/CentOS/Fedora 规范安装包**<br>保留 0755 权限的绿色包 |
           | 🐉 **Linux (信创/树莓派)** | arm64 | `${APP_NAME}_${VERSION}_linux_arm64.deb`<br>`${APP_NAME}-${VERSION}-1.aarch64.rpm`<br>`${APP_NAME}_${VERSION}_linux_arm64_portable.tar.gz` | `.deb`<br>`.rpm`<br>`.tar.gz` | **统信 UOS / 银河麒麟信创标准包**<br>**openEuler / RedHat ARM 规范包**<br>树莓派/ARM64 绿色包 |
