@@ -1,11 +1,11 @@
 {
-    "name": "flutter_multiplatform_demo",
-    "short_name": "flutter_multiplatform_demo",
+    "name": "Ateng-Flutter",
+    "short_name": "Ateng-Flutter",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Ateng-Flutter: A multiplatform Flutter application with automated CI/CD packaging and release.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

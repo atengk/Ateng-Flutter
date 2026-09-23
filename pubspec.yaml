@@ -1,5 +1,5 @@
-name: flutter_multiplatform_demo
-description: "A multiplatform Flutter demo application with automated CI/CD packaging and release."
+name: ateng_flutter
+description: "Ateng-Flutter: A multiplatform Flutter application with automated CI/CD packaging and release."
 publish_to: "none"
 version: 1.0.1+2
 

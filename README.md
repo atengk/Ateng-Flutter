@@ -1,14 +1,14 @@
-# Flutter 跨平台演示与 GitHub Actions 全平台自动化打包发布
+# Ateng-Flutter: Flutter 跨平台演示与 GitHub Actions 全平台自动化打包发布
 
-[![CI/CD Pipeline](https://github.com/atengk/flutter-multiplatform-demo/actions/workflows/pipeline.yml/badge.svg)](https://github.com/atengk/flutter-multiplatform-demo/actions/workflows/pipeline.yml)
-[![GitHub Release](https://img.shields.io/github/v/release/atengk/flutter-multiplatform-demo?logo=github&color=blue)](https://github.com/atengk/flutter-multiplatform-demo/releases)
-[![GitHub Pages](https://img.shields.io/badge/Web%20Demo-GitHub%20Pages-24292e?logo=github)](https://atengk.github.io/flutter-multiplatform-demo/)
+[![CI/CD Pipeline](https://github.com/atengk/Ateng-Flutter/actions/workflows/pipeline.yml/badge.svg)](https://github.com/atengk/Ateng-Flutter/actions/workflows/pipeline.yml)
+[![GitHub Release](https://img.shields.io/github/v/release/atengk/Ateng-Flutter?logo=github&color=blue)](https://github.com/atengk/Ateng-Flutter/releases)
+[![GitHub Pages](https://img.shields.io/badge/Web%20Demo-GitHub%20Pages-24292e?logo=github)](https://atengk.github.io/Ateng-Flutter/)
 [![Flutter Version](https://img.shields.io/badge/Flutter-3.x%20Stable-02569B?logo=flutter)](https://flutter.dev)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 本项目是一个基于 **Flutter & Dart** 构建的工业级跨平台演示工程，深度融合 **GitHub Actions** 全平台自动化 CI/CD 流水线，实现日常提交快速质量门禁，以及版本标签推送时**全自动多平台编译、标准向导安装包封装、校验哈希生成与 GitHub Releases 制品分发**。
 
-> 🌐 **Web 在线演示体验 (GitHub Pages)**：[https://atengk.github.io/flutter-multiplatform-demo/](https://atengk.github.io/flutter-multiplatform-demo/)
+> 🌐 **Web 在线演示体验 (GitHub Pages)**：[https://atengk.github.io/Ateng-Flutter/](https://atengk.github.io/Ateng-Flutter/)
 
 ---
 
@@ -18,14 +18,14 @@
 
 | 操作系统 / 生态 | 架构 | 规范化安装包 / 制品文件名 | 格式 | 遵循标准与特性说明 |
 | :--- | :--- | :--- | :---: | :--- |
-| 💻 **Windows** | `x64` | `flutter-multiplatform-demo_1.0.1_windows_x64_setup.exe`<br>`flutter-multiplatform-demo_1.0.1_windows_x64_portable.zip` | `.exe`<br>`.zip` | **Inno Setup 原生简体中文安装向导** (含开始菜单、桌面图标与卸载器)<br>免安装便携绿色包 (支持 Win11 ARM 转译运行) |
-| 🍎 **macOS** | Universal | `flutter-multiplatform-demo_1.0.1_macos_universal.dmg`<br>`flutter-multiplatform-demo_1.0.1_macos_universal.zip` | `.dmg`<br>`.zip` | **标准挂载磁盘安装镜像** (含拖拽至 Applications 原生安装)<br>通用双架构 App Bundle 绿色包 (M 芯片与 Intel 原生即开) |
-| 📱 **iOS** | `arm64` | `flutter-multiplatform-demo_1.0.1_ios_arm64.ipa` | `.ipa` | 标准未签名测试安装包 (支持 TrollStore / AltStore / 企业自签) |
-| 🤖 **Android** | Universal | `flutter-multiplatform-demo_1.0.1_android_universal.apk` | `.apk` | 生产环境 Release APK 胖包 (内置 ARMv7/ARM64/x86 全部原生库) |
-| 📱 **HarmonyOS NEXT** | `arm64` | `flutter-multiplatform-demo_1.0.1_harmonyos_arm64.hap` | `.hap` | **纯血鸿蒙 / OpenHarmony 标准安装包** (未签名测试包，支持真机/模拟器测试) |
-| 🌐 **Web** | Web | `flutter-multiplatform-demo_1.0.1_web.zip` | `.zip` | 包含静态 HTML/JS/Wasm 资源的网站整包 (可直接部署至 Pages/Nginx) |
-| 🐧 **Linux (传统 PC/服务器)** | `x86_64` | `flutter-multiplatform-demo_1.0.1_linux_amd64.deb`<br>`flutter-multiplatform-demo-1.0.1-1.x86_64.rpm`<br>`flutter-multiplatform-demo_1.0.1_linux_x86_64_portable.tar.gz` | `.deb`<br>`.rpm`<br>`.tar.gz` | 遵循 **Debian 官方规范** (`_amd64.deb`)，适配 Ubuntu/Debian/Deepin<br>遵循 **RedHat 官方规范** (`-1.x86_64.rpm`)，适配 RHEL/CentOS/Fedora<br>便携运行包 (保留 `0755` 权限) |
-| 🐉 **Linux (国产信创/树莓派)** | `arm64` | `flutter-multiplatform-demo_1.0.1_linux_arm64.deb`<br>`flutter-multiplatform-demo-1.0.1-1.aarch64.rpm`<br>`flutter-multiplatform-demo_1.0.1_linux_arm64_portable.tar.gz` | `.deb`<br>`.rpm`<br>`.tar.gz` | 专为**统信 UOS / 银河麒麟** ARM64 信创桌面设计的标准安装包<br>专为 **openEuler / RedHat ARM** 信创服务器设计的 RPM 安装包<br>树莓派/单板机运行包 |
+| 💻 **Windows** | `x64` | `Ateng-Flutter_1.0.1_windows_x64_setup.exe`<br>`Ateng-Flutter_1.0.1_windows_x64_portable.zip` | `.exe`<br>`.zip` | **Inno Setup 原生简体中文安装向导** (含开始菜单、桌面图标与卸载器)<br>免安装便携绿色包 (支持 Win11 ARM 转译运行) |
+| 🍎 **macOS** | Universal | `Ateng-Flutter_1.0.1_macos_universal.dmg`<br>`Ateng-Flutter_1.0.1_macos_universal.zip` | `.dmg`<br>`.zip` | **标准挂载磁盘安装镜像** (含拖拽至 Applications 原生安装)<br>通用双架构 App Bundle 绿色包 (M 芯片与 Intel 原生即开) |
+| 📱 **iOS** | `arm64` | `Ateng-Flutter_1.0.1_ios_arm64.ipa` | `.ipa` | 标准未签名测试安装包 (支持 TrollStore / AltStore / 企业自签) |
+| 🤖 **Android** | Universal | `Ateng-Flutter_1.0.1_android_universal.apk` | `.apk` | 生产环境 Release APK 胖包 (内置 ARMv7/ARM64/x86 全部原生库) |
+| 📱 **HarmonyOS NEXT** | `arm64` | `Ateng-Flutter_1.0.1_harmonyos_arm64.hap` | `.hap` | **纯血鸿蒙 / OpenHarmony 标准安装包** (未签名测试包，支持真机/模拟器测试) |
+| 🌐 **Web** | Web | `Ateng-Flutter_1.0.1_web.zip` | `.zip` | 包含静态 HTML/JS/Wasm 资源的网站整包 (可直接部署至 Pages/Nginx) |
+| 🐧 **Linux (传统 PC/服务器)** | `x86_64` | `Ateng-Flutter_1.0.1_linux_amd64.deb`<br>`Ateng-Flutter-1.0.1-1.x86_64.rpm`<br>`Ateng-Flutter_1.0.1_linux_x86_64_portable.tar.gz` | `.deb`<br>`.rpm`<br>`.tar.gz` | 遵循 **Debian 官方规范** (`_amd64.deb`)，适配 Ubuntu/Debian/Deepin<br>遵循 **RedHat 官方规范** (`-1.x86_64.rpm`)，适配 RHEL/CentOS/Fedora<br>便携运行包 (保留 `0755` 权限) |
+| 🐉 **Linux (国产信创/树莓派)** | `arm64` | `Ateng-Flutter_1.0.1_linux_arm64.deb`<br>`Ateng-Flutter-1.0.1-1.aarch64.rpm`<br>`Ateng-Flutter_1.0.1_linux_arm64_portable.tar.gz` | `.deb`<br>`.rpm`<br>`.tar.gz` | 专为**统信 UOS / 银河麒麟** ARM64 信创桌面设计的标准安装包<br>专为 **openEuler / RedHat ARM** 信创服务器设计的 RPM 安装包<br>树莓派/单板机运行包 |
 
 ---
 

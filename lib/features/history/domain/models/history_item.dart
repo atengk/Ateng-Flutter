@@ -4,7 +4,7 @@
 /// @since 2026-09-22
 library;
 
-import 'package:flutter_multiplatform_demo/features/toolbox/domain/models/tool_type.dart';
+import 'package:ateng_flutter/features/toolbox/domain/models/tool_type.dart';
 
 /// 历史记录实体类
 class HistoryItem {

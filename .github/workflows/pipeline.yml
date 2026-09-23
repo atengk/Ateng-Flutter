@@ -28,7 +28,7 @@ permissions:
 
 # 全局常量定义
 env:
-  APP_NAME: flutter-multiplatform-demo
+  APP_NAME: Ateng-Flutter
 
 # 并发防抖与自动取消：同一分支或标签有新提交触发时，自动取消旧在途任务
 concurrency:
@@ -122,7 +122,7 @@ jobs:
       - name: 生成 Android 工程结构
         run: |
           flutter config --no-analytics
-          flutter create . --platforms=android --org com.example
+          flutter create . --platforms=android --org com.ateng
 
       - name: 获取依赖
         run: flutter pub get
@@ -162,7 +162,7 @@ jobs:
           cache: true
 
       - name: 生成 iOS 工程结构
-        run: flutter create . --platforms=ios --org com.example
+        run: flutter create . --platforms=ios --org com.ateng
 
       - name: 获取依赖
         run: flutter pub get
@@ -213,8 +213,8 @@ jobs:
       - name: 获取依赖
         run: flutter pub get
 
-      - name: 编译 Web 静态资源 (适配 GitHub Pages 路径)
-        run: flutter build web --release --base-href "/flutter-multiplatform-demo/"
+      - name: 编译 Web 端 (Wasm/HTML5)
+        run: flutter build web --release --base-href "/Ateng-Flutter/"
 
       - name: 规范化打包 Web 制品
         run: |
@@ -286,10 +286,10 @@ jobs:
           $setupExeName = "$($env:APP_NAME)_$($env:VERSION)_windows_x64_setup"
           $issContent = @"
           [Setup]
-          AppName=Flutter Multiplatform Demo
+          AppName=Ateng-Flutter
           AppVersion=$($env:VERSION)
-          DefaultDirName={autopf}\FlutterMultiplatformDemo
-          DefaultGroupName=Flutter Multiplatform Demo
+          DefaultDirName={autopf}\Ateng-Flutter
+          DefaultGroupName=Ateng-Flutter
           OutputDir=.
           OutputBaseFilename=$setupExeName
           Compression=lzma
@@ -304,8 +304,8 @@ jobs:
           Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
           [Icons]
-          Name: "{autoprograms}\Flutter Multiplatform Demo"; Filename: "{app}\flutter_multiplatform_demo.exe"
-          Name: "{autodesktop}\Flutter Multiplatform Demo"; Filename: "{app}\flutter_multiplatform_demo.exe"; Tasks: desktopicon
+          Name: "{autoprograms}\Ateng-Flutter"; Filename: "{app}\ateng_flutter.exe"
+          Name: "{autodesktop}\Ateng-Flutter"; Filename: "{app}\ateng_flutter.exe"; Tasks: desktopicon
 
           [Tasks]
           Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: "附加快捷方式:"
@@ -354,14 +354,14 @@ jobs:
 
       - name: 打包 macOS 便携 ZIP (保留符号链接)
         run: |
-          ditto -c -k --sequesterRsrc --keepParent build/macos/Build/Products/Release/flutter_multiplatform_demo.app "${APP_NAME}_${VERSION}_macos_universal.zip"
+          ditto -c -k --sequesterRsrc --keepParent build/macos/Build/Products/Release/ateng_flutter.app "${APP_NAME}_${VERSION}_macos_universal.zip"
 
       - name: 制作 macOS 标准 DMG 磁盘镜像
         run: |
           mkdir -p dmg_root
-          cp -R "build/macos/Build/Products/Release/flutter_multiplatform_demo.app" dmg_root/
+          cp -R "build/macos/Build/Products/Release/ateng_flutter.app" dmg_root/
           ln -s /Applications dmg_root/Applications
-          hdiutil create -volname "Flutter Multiplatform Demo" -srcfolder dmg_root -ov -format UDZO "${APP_NAME}_${VERSION}_macos_universal.dmg"
+          hdiutil create -volname "Ateng-Flutter" -srcfolder dmg_root -ov -format UDZO "${APP_NAME}_${VERSION}_macos_universal.dmg"
           rm -rf dmg_root
 
       - name: 上传 macOS 制品
@@ -443,15 +443,15 @@ jobs:
 
       - name: 按照官方规范打包 DEB 与 RPM 安装包
         run: |
-          mkdir -p pkg_root/opt/flutter_multiplatform_demo pkg_root/usr/bin pkg_root/usr/share/applications
-          cp -r "${{ steps.bundle.outputs.dir }}"/* pkg_root/opt/flutter_multiplatform_demo/
-          ln -s /opt/flutter_multiplatform_demo/flutter_multiplatform_demo pkg_root/usr/bin/flutter_multiplatform_demo
+          mkdir -p pkg_root/opt/ateng_flutter pkg_root/usr/bin pkg_root/usr/share/applications
+          cp -r "${{ steps.bundle.outputs.dir }}"/* pkg_root/opt/ateng_flutter/
+          ln -s /opt/ateng_flutter/ateng_flutter pkg_root/usr/bin/ateng_flutter
 
-          cat << 'EOF' > pkg_root/usr/share/applications/flutter_multiplatform_demo.desktop
+          cat << 'EOF' > pkg_root/usr/share/applications/ateng_flutter.desktop
           [Desktop Entry]
-          Name=Flutter Multiplatform Demo
-          Comment=Flutter Multiplatform Demo Application
-          Exec=/usr/bin/flutter_multiplatform_demo
+          Name=Ateng-Flutter
+          Comment=Ateng-Flutter Application
+          Exec=/usr/bin/ateng_flutter
           Terminal=false
           Type=Application
           Categories=Utility;
@@ -460,21 +460,21 @@ jobs:
           # Debian 官方规范命名: <name>_<version>_<arch>.deb
           DEB_NAME="${APP_NAME}_${VERSION}_linux_${{ matrix.deb_arch }}.deb"
           fpm -s dir -t deb \
-            -n flutter-multiplatform-demo \
+            -n ateng-flutter \
             -v "${VERSION}" \
             -a "${{ matrix.deb_arch }}" \
-            --description "Flutter Multiplatform Demo Application" \
+            --description "Ateng-Flutter Application" \
             -C pkg_root \
             -p "$DEB_NAME"
 
           # RedHat RPM 官方规范命名: <name>-<version>-<release>.<arch>.rpm
           RPM_NAME="${APP_NAME}-${VERSION}-1.${{ matrix.rpm_arch }}.rpm"
           fpm -s dir -t rpm \
-            -n flutter-multiplatform-demo \
+            -n ateng-flutter \
             -v "${VERSION}" \
             -a "${{ matrix.rpm_arch }}" \
             --iteration 1 \
-            --description "Flutter Multiplatform Demo Application" \
+            --description "Ateng-Flutter Application" \
             -C pkg_root \
             -p "$RPM_NAME"
 
@@ -546,7 +546,7 @@ jobs:
           export DEVECO_SDK_HOME="$HOS_SDK_HOME"
           flutter --version
           flutter doctor -v || true
-          flutter create . --platforms=ohos --project-name flutter_multiplatform_demo --org com.example --no-pub
+          flutter create . --platforms=ohos --project-name ateng_flutter --org com.ateng --no-pub
 
       - name: 注入鸿蒙适配依赖
         continue-on-error: true

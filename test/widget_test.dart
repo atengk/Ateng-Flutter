@@ -7,8 +7,8 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_multiplatform_demo/core/constants/app_constants.dart';
-import 'package:flutter_multiplatform_demo/main.dart';
+import 'package:ateng_flutter/core/constants/app_constants.dart';
+import 'package:ateng_flutter/main.dart';
 
 void main() {
   testWidgets('DevToolbox 应用启动与主导航冒烟测试', (WidgetTester tester) async {

@@ -15,8 +15,7 @@ class AppConstants {
   static const String appVersion = 'v1.0.0';
 
   /// GitHub 源码仓库地址
-  static const String repoUrl =
-      'https://github.com/atengk/flutter-multiplatform-demo';
+  static const String repoUrl = 'https://github.com/atengk/Ateng-Flutter';
 
   /// 本地持久化历史记录键名
   static const String prefsHistoryKey = 'devtoolbox_history_records';
