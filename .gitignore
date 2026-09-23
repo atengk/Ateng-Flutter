@@ -49,11 +49,26 @@ coverage/
 *.lcov
 symbols/
 
+# Scratch & Probe Scripts (Agent Guard)
+scratch/
+
+# Locally Generated Native Platform Scaffolding (Dynamic Project Guard: CI creates them at runtime)
+/android/
+/ios/
+/windows/
+/macos/
+/linux/
+/ohos/
+
 # Secrets & Local Configurations (Security Redline)
 *.jks
 *.keystore
 *.p12
 *.key
+*.pem
+*.pfx
+*.cer
+*.crt
 *.mobileprovision
 **/android/key.properties
 **/local.properties
@@ -124,5 +139,12 @@ symbols/
 *.dmg
 *.deb
 *.rpm
+*.hap
+*.har
+*.tar.gz
+*.zip
+*.exe
+*.msi
+installer.iss
 checksums.txt
 release_notes.md

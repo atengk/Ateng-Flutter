@@ -29,18 +29,105 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>Ateng-Flutter</title>
+  <title>DevToolbox Studio</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* 彻底消除 Flutter 3.22+ 默认注入的丑陋顶部进度条与加载条 */
+    .flutter-loader,
+    [class*="flutter-loader"],
+    .indeterminate,
+    #loading,
+    .loading,
+    progress {
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      height: 0 !important;
+    }
+
+    /* 全局背景色与原生高质量抗锯齿中文字体栈 */
+    html, body {
+      background-color: #F8FAFC;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", "Noto Sans SC", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      font-feature-settings: "liga", "kern";
+    }
+
+    /* 现代极客首屏平滑占位层 */
+    #app-splash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: #F8FAFC;
+      z-index: 999999;
+      transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+    }
+    .splash-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: rgba(2, 132, 199, 0.08);
+      border: 1px solid rgba(2, 132, 199, 0.22);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.12);
+    }
+    .splash-title {
+      margin-top: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #0F172A;
+      letter-spacing: 0.3px;
+      font-family: 'JetBrains Mono', -apple-system, sans-serif;
+    }
+    .splash-subtitle {
+      margin-top: 4px;
+      font-size: 11px;
+      color: #94A3B8;
+    }
+  </style>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
+  <!-- 现代先锋极客 Studio 首屏启动占位层 -->
+  <div id="app-splash">
+    <div class="splash-logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+      </svg>
+    </div>
+    <div class="splash-title">DevToolbox Studio</div>
+    <div class="splash-subtitle">正在就绪高性能微引擎...</div>
+  </div>
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+  <script>
+    // 监听 Flutter 首帧渲染完成事件，平滑淡出启动占位
+    window.addEventListener('flutter-first-frame', function () {
+      var splash = document.getElementById('app-splash');
+      if (splash) {
+        splash.style.opacity = '0';
+        setTimeout(function () {
+          if (splash.parentNode) splash.parentNode.removeChild(splash);
+        }, 300);
+      }
+    });
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

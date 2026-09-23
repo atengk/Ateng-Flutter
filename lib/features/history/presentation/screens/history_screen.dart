@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/widgets/section_header.dart';
+import '../../../../core/widgets/studio_card.dart';
 import '../../../toolbox/presentation/providers/toolbox_provider.dart';
 import '../providers/history_provider.dart';
 import '../widgets/history_list_item.dart';
@@ -32,7 +33,7 @@ class HistoryScreen extends ConsumerWidget {
     final colorScheme = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -41,11 +42,26 @@ class HistoryScreen extends ConsumerWidget {
             subtitle: '全量不可变记录、实时使用频次统计与一键工具回填',
             icon: Icons.history,
             trailing: items.isNotEmpty
-                ? TextButton.icon(
+                ? OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      foregroundColor: colorScheme.error,
+                      side: BorderSide(color: colorScheme.error.withAlpha(100)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6.0),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10.0,
+                        vertical: 4.0,
+                      ),
+                    ),
                     onPressed: () =>
                         ref.read(historyProvider.notifier).clearAll(),
-                    icon: const Icon(Icons.delete_sweep, size: 18),
-                    label: const Text('清空历史'),
+                    icon: const Icon(Icons.delete_sweep, size: 15),
+                    label: const Text(
+                      '清空历史',
+                      style: TextStyle(fontSize: 12),
+                    ),
                   )
                 : null,
           ),
@@ -53,42 +69,41 @@ class HistoryScreen extends ConsumerWidget {
             totalCount: historyState.totalCount,
             stats: historyState.usageStats,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Expanded(
             child: items.isEmpty
                 ? Center(
                     child: SingleChildScrollView(
-                      child: Card(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24.0,
-                            vertical: 16.0,
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.inbox,
-                                size: 36,
+                      child: StudioCard(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32.0,
+                          vertical: 24.0,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.inbox_outlined,
+                              size: 38,
+                              color: colorScheme.outline.withAlpha(150),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              '暂无操作历史记录',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: colorScheme.outline,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '在微工具工坊执行格式化、计算或转化后将自动在此留痕',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodySmall?.copyWith(
                                 color: colorScheme.outline,
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '暂无操作历史记录',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  color: colorScheme.outline,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '在工具工坊执行格式化或计算后将自动在此留痕',
-                                textAlign: TextAlign.center,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.outline,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

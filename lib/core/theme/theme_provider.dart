@@ -1,4 +1,4 @@
-/// 全局主题模式与强调色状态管理，默认开启极客暗黑模式
+/// 全局主题模式与强调色状态管理，默认开启现代极客明亮模式
 ///
 /// @author Ateng
 /// @since 2026-09-23
@@ -47,12 +47,12 @@ class ThemeState {
 
 /// 主题状态控制器
 class ThemeNotifier extends StateNotifier<ThemeState> {
-  /// 构造函数并初始化加载配置（默认优先开启极客暗黑模式）
+  /// 构造函数并初始化加载配置（默认优先开启现代极客明亮模式）
   ThemeNotifier()
       : super(
           const ThemeState(
-            mode: ThemeMode.dark,
-            seedColorIndex: 0,
+            mode: ThemeMode.light,
+            seedColorIndex: 1, // 默认采用极客蓝
           ),
         ) {
     _loadFromPrefs();
@@ -62,16 +62,16 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
   Future<void> _loadFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     final modeName = prefs.getString(AppConstants.prefsThemeModeKey);
-    final colorIndex = prefs.getInt(AppConstants.prefsSeedColorKey) ?? 0;
+    final colorIndex = prefs.getInt(AppConstants.prefsSeedColorKey) ?? 1;
 
-    // 默认采用暗黑优先策略 (Dark-first by default)
-    ThemeMode loadedMode = ThemeMode.dark;
-    if (modeName == 'light') {
-      loadedMode = ThemeMode.light;
+    // 默认采用明亮优先策略 (Light-first by default)
+    ThemeMode loadedMode = ThemeMode.light;
+    if (modeName == 'dark') {
+      loadedMode = ThemeMode.dark;
     } else if (modeName == 'system') {
       loadedMode = ThemeMode.system;
-    } else if (modeName == 'dark') {
-      loadedMode = ThemeMode.dark;
+    } else if (modeName == 'light') {
+      loadedMode = ThemeMode.light;
     }
 
     state = state.copyWith(

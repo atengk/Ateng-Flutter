@@ -59,11 +59,15 @@ class _HashToolViewState extends ConsumerState<HashToolView> {
   Widget build(BuildContext context) {
     final state = ref.watch(toolboxProvider);
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     if (_inputController.text != state.input) {
       _inputController.text = state.input;
     }
+
+    final inputLines =
+        state.input.isEmpty ? 0 : '\n'.allMatches(state.input).length + 1;
+    final outputLines =
+        state.output.isEmpty ? 0 : '\n'.allMatches(state.output).length + 1;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -72,43 +76,45 @@ class _HashToolViewState extends ConsumerState<HashToolView> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            FilledButton.tonalIcon(
+            _CryptoActionBtn(
+              label: 'MD5 哈希',
+              icon: Icons.fingerprint,
+              isPrimary: true,
               onPressed: () => _runOp('md5'),
-              icon: const Icon(Icons.fingerprint, size: 16),
-              label: const Text('MD5 哈希'),
             ),
-            FilledButton.tonalIcon(
+            _CryptoActionBtn(
+              label: 'SHA-256',
+              icon: Icons.security,
+              isPrimary: true,
               onPressed: () => _runOp('sha256'),
-              icon: const Icon(Icons.security, size: 16),
-              label: const Text('SHA-256'),
             ),
-            OutlinedButton.icon(
+            _CryptoActionBtn(
+              label: 'Base64 编码',
+              icon: Icons.lock_outline,
               onPressed: () => _runOp('base64_encode'),
-              icon: const Icon(Icons.lock_outline, size: 16),
-              label: const Text('Base64 编码'),
             ),
-            OutlinedButton.icon(
+            _CryptoActionBtn(
+              label: 'Base64 解码',
+              icon: Icons.lock_open,
               onPressed: () => _runOp('base64_decode'),
-              icon: const Icon(Icons.lock_open, size: 16),
-              label: const Text('Base64 解码'),
             ),
-            OutlinedButton.icon(
+            _CryptoActionBtn(
+              label: 'URL 编码',
+              icon: Icons.link,
               onPressed: () => _runOp('url_encode'),
-              icon: const Icon(Icons.link, size: 16),
-              label: const Text('URL 编码'),
             ),
-            OutlinedButton.icon(
+            _CryptoActionBtn(
+              label: 'URL 解码',
+              icon: Icons.link_off,
               onPressed: () => _runOp('url_decode'),
-              icon: const Icon(Icons.link_off, size: 16),
-              label: const Text('URL 解码'),
             ),
-            TextButton.icon(
+            _CryptoActionBtn(
+              label: '清空全部',
+              icon: Icons.clear_all,
               onPressed: () {
                 _inputController.clear();
                 ref.read(toolboxProvider.notifier).clearAll();
               },
-              icon: const Icon(Icons.clear_all, size: 16),
-              label: const Text('清空'),
             ),
           ],
         ),
@@ -140,6 +146,7 @@ class _HashToolViewState extends ConsumerState<HashToolView> {
               final inputWorkbench = CodeWorkbench(
                 title: '原始文本输入',
                 badges: [
+                  WorkbenchBadge(label: '$inputLines 行'),
                   WorkbenchBadge(label: '${state.input.length} 字符'),
                 ],
                 actions: [
@@ -149,34 +156,23 @@ class _HashToolViewState extends ConsumerState<HashToolView> {
                     onPressed: () => _copy(_inputController.text, context),
                   ),
                 ],
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: TextField(
-                    controller: _inputController,
-                    onChanged: (val) =>
-                        ref.read(toolboxProvider.notifier).updateInput(val),
-                    maxLines: null,
-                    expands: true,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 13,
-                    ),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      hintText: '输入需要进行哈希计算或编解码的原始字符串...',
-                    ),
-                  ),
+                child: WorkbenchCodeEditor(
+                  controller: _inputController,
+                  onChanged: (val) =>
+                      ref.read(toolboxProvider.notifier).updateInput(val),
+                  hintText: '输入需要进行哈希计算或编解码的原始字符串...',
                 ),
               );
 
               final outputWorkbench = CodeWorkbench(
                 title: '计算结果输出',
                 badges: [
+                  WorkbenchBadge(label: '$outputLines 行'),
                   WorkbenchBadge(label: '${state.output.length} 字符'),
                   if (state.output.isNotEmpty)
                     const WorkbenchBadge(
                       label: '完成',
-                      color: AppColors.darkAccentCyan,
+                      color: AppColors.electricAzure,
                       icon: Icons.check,
                     ),
                 ],
@@ -189,26 +185,9 @@ class _HashToolViewState extends ConsumerState<HashToolView> {
                         : null,
                   ),
                 ],
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: state.output.isEmpty
-                      ? Center(
-                          child: Text(
-                            '// 点击上方算法按钮执行计算...',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.outline,
-                              fontFamily: 'monospace',
-                            ),
-                          ),
-                        )
-                      : SelectableText(
-                          state.output,
-                          style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 13,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
+                child: WorkbenchCodeViewer(
+                  content: state.output,
+                  placeholder: '// 点击上方算法按钮执行计算...',
                 ),
               );
 
@@ -217,7 +196,7 @@ class _HashToolViewState extends ConsumerState<HashToolView> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Expanded(child: inputWorkbench),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 16),
                     Expanded(child: outputWorkbench),
                   ],
                 );
@@ -225,9 +204,9 @@ class _HashToolViewState extends ConsumerState<HashToolView> {
               return SingleChildScrollView(
                 child: Column(
                   children: [
-                    SizedBox(height: 220, child: inputWorkbench),
-                    const SizedBox(height: 10),
-                    SizedBox(height: 220, child: outputWorkbench),
+                    SizedBox(height: 260, child: inputWorkbench),
+                    const SizedBox(height: 16),
+                    SizedBox(height: 260, child: outputWorkbench),
                   ],
                 ),
               );
@@ -235,6 +214,118 @@ class _HashToolViewState extends ConsumerState<HashToolView> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _CryptoActionBtn extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final bool isPrimary;
+
+  const _CryptoActionBtn({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    this.isPrimary = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    if (isPrimary) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(6),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6.5),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withAlpha(25),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: colorScheme.primary.withAlpha(80),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 14, color: colorScheme.primary),
+                const SizedBox(width: 5),
+                Text(
+                  label,
+                  strutStyle: const StrutStyle(
+                    forceStrutHeight: true,
+                    height: 1.3,
+                    leading: 0.1,
+                  ),
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                    color: colorScheme.primary,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final bg = isDark ? colorScheme.surfaceContainerHigh : colorScheme.surface;
+    final border = colorScheme.outlineVariant;
+    final textAndIconColor = colorScheme.onSurface;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6.5),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: border, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color:
+                    isDark ? const Color(0x22000000) : const Color(0x0A0F172A),
+                blurRadius: 2,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14.5, color: textAndIconColor),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                strutStyle: const StrutStyle(
+                  forceStrutHeight: true,
+                  height: 1.3,
+                  leading: 0.1,
+                ),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                  color: textAndIconColor,
+                  letterSpacing: 0,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

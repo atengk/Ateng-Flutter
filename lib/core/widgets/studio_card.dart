@@ -1,4 +1,4 @@
-/// Raycast 极客风格 1px 微发光边框卡片组件
+/// Raycast 与 Linear 极客风格 1px 微发光边框卡片组件
 ///
 /// @author Ateng
 /// @since 2026-09-23
@@ -52,6 +52,7 @@ class _StudioCardState extends State<StudioCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     final border = Border.all(
       color: _isHovered ? colorScheme.outline : colorScheme.outlineVariant,
@@ -60,14 +61,25 @@ class _StudioCardState extends State<StudioCard> {
 
     final bg = widget.backgroundColor ?? colorScheme.surface;
 
+    final shadowColor = isDark
+        ? const Color(0x33000000)
+        : (_isHovered ? const Color(0x140F172A) : const Color(0x0A0F172A));
+
     final container = AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.easeOut,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
       padding: widget.padding,
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(widget.borderRadius),
         border: border,
+        boxShadow: [
+          BoxShadow(
+            color: shadowColor,
+            blurRadius: _isHovered ? 4 : 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: widget.child,
     );

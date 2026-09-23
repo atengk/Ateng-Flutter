@@ -40,15 +40,19 @@ class SectionHeader extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(7.0),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
+              color: colorScheme.primary.withAlpha(25),
               borderRadius: BorderRadius.circular(8.0),
+              border: Border.all(
+                color: colorScheme.primary.withAlpha(70),
+                width: 1,
+              ),
             ),
             child: Icon(
               icon,
-              size: 20,
-              color: colorScheme.onPrimaryContainer,
+              size: 18,
+              color: colorScheme.primary,
             ),
           ),
           const SizedBox(width: 12),
@@ -60,7 +64,9 @@ class SectionHeader extends StatelessWidget {
                 Text(
                   title,
                   style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0,
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 if (subtitle != null) ...[
@@ -68,7 +74,8 @@ class SectionHeader extends StatelessWidget {
                   Text(
                     subtitle!,
                     style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.outline,
+                      color: colorScheme.onSurfaceVariant,
+                      letterSpacing: 0,
                     ),
                   ),
                 ],
