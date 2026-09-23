@@ -48,14 +48,14 @@
 
 | 操作系统 / 生态 | 架构 | 规范化安装包 / 制品文件名 | 格式 | 遵循标准与特性说明 |
 | :--- | :--- | :--- | :---: | :--- |
-| 💻 **Windows** | `x64` | `Ateng-Flutter_1.0.5_windows_x64_setup.exe`<br>`Ateng-Flutter_1.0.5_windows_x64_portable.zip` | `.exe`<br>`.zip` | **Inno Setup 原生简体中文安装向导** (含开始菜单、桌面图标与卸载器)<br>免安装便携绿色包 (支持 Win11 ARM 转译运行) |
-| 🍎 **macOS** | Universal | `Ateng-Flutter_1.0.5_macos_universal.dmg`<br>`Ateng-Flutter_1.0.5_macos_universal.zip` | `.dmg`<br>`.zip` | **标准挂载磁盘安装镜像** (含拖拽至 Applications 原生安装)<br>通用双架构 App Bundle 绿色包 (M 芯片与 Intel 原生即开) |
-| 📱 **iOS** | `arm64` | `Ateng-Flutter_1.0.5_ios_arm64.ipa` | `.ipa` | 标准未签名测试安装包 (支持 TrollStore / AltStore / 企业自签) |
-| 🤖 **Android** | Universal | `Ateng-Flutter_1.0.5_android_universal.apk` | `.apk` | 生产环境 Release APK 胖包 (内置 ARMv7/ARM64/x86 全部原生库) |
-| 📱 **HarmonyOS NEXT** | `arm64` | `Ateng-Flutter_1.0.5_harmonyos_arm64.hap` | `.hap` | **纯血鸿蒙 / OpenHarmony 标准安装包** (未签名测试包，支持真机/模拟器测试) |
-| 🌐 **Web** | Web | `Ateng-Flutter_1.0.5_web.zip` | `.zip` | 包含静态 HTML/JS/Wasm 资源的网站整包 (可直接部署至 Pages/Nginx) |
-| 🐧 **Linux (传统 PC/服务器)** | `x86_64` | `Ateng-Flutter_1.0.5_linux_amd64.deb`<br>`Ateng-Flutter-1.0.5-1.x86_64.rpm`<br>`Ateng-Flutter_1.0.5_linux_x86_64_portable.tar.gz` | `.deb`<br>`.rpm`<br>`.tar.gz` | 遵循 **Debian 官方规范** (`_amd64.deb`)，适配 Ubuntu/Debian/Deepin<br>遵循 **RedHat 官方规范** (`-1.x86_64.rpm`)，适配 RHEL/CentOS/Fedora<br>便携运行包 (保留 `0755` 权限) |
-| 🐉 **Linux (国产信创/树莓派)** | `arm64` | `Ateng-Flutter_1.0.5_linux_arm64.deb`<br>`Ateng-Flutter-1.0.5-1.aarch64.rpm`<br>`Ateng-Flutter_1.0.5_linux_arm64_portable.tar.gz` | `.deb`<br>`.rpm`<br>`.tar.gz` | 专为**统信 UOS / 银河麒麟** ARM64 信创桌面设计的标准安装包<br>专为 **openEuler / RedHat ARM** 信创服务器设计的 RPM 安装包<br>树莓派/单板机运行包 |
+| 💻 **Windows** | `x64` | `Ateng-Flutter_1.0.0_windows_x64_setup.exe`<br>`Ateng-Flutter_1.0.0_windows_x64_portable.zip` | `.exe`<br>`.zip` | **Inno Setup 原生简体中文安装向导** (含开始菜单、桌面图标与卸载器)<br>免安装便携绿色包 (支持 Win11 ARM 转译运行) |
+| 🍎 **macOS** | Universal | `Ateng-Flutter_1.0.0_macos_universal.dmg`<br>`Ateng-Flutter_1.0.0_macos_universal.zip` | `.dmg`<br>`.zip` | **标准挂载磁盘安装镜像** (含拖拽至 Applications 原生安装)<br>通用双架构 App Bundle 绿色包 (M 芯片与 Intel 原生即开) |
+| 📱 **iOS** | `arm64` | `Ateng-Flutter_1.0.0_ios_arm64.ipa` | `.ipa` | 标准未签名测试安装包 (支持 TrollStore / AltStore / 企业自签) |
+| 🤖 **Android** | Universal | `Ateng-Flutter_1.0.0_android_universal.apk` | `.apk` | 生产环境 Release APK 胖包 (内置 ARMv7/ARM64/x86 全部原生库) |
+| 📱 **HarmonyOS NEXT** | `arm64` | `Ateng-Flutter_1.0.0_harmonyos_arm64.hap` | `.hap` | **纯血鸿蒙 / OpenHarmony 标准安装包** (未签名测试包，支持真机/模拟器测试) |
+| 🌐 **Web** | Web | `Ateng-Flutter_1.0.0_web.zip` | `.zip` | 包含静态 HTML/JS/Wasm 资源的网站整包 (可直接部署至 Pages/Nginx) |
+| 🐧 **Linux (传统 PC/服务器)** | `x86_64` | `Ateng-Flutter_1.0.0_linux_amd64.deb`<br>`Ateng-Flutter-1.0.0-1.x86_64.rpm`<br>`Ateng-Flutter_1.0.0_linux_x86_64_portable.tar.gz` | `.deb`<br>`.rpm`<br>`.tar.gz` | 遵循 **Debian 官方规范** (`_amd64.deb`)，适配 Ubuntu/Debian/Deepin<br>遵循 **RedHat 官方规范** (`-1.x86_64.rpm`)，适配 RHEL/CentOS/Fedora<br>便携运行包 (保留 `0755` 权限) |
+| 🐉 **Linux (国产信创/树莓派)** | `arm64` | `Ateng-Flutter_1.0.0_linux_arm64.deb`<br>`Ateng-Flutter-1.0.0-1.aarch64.rpm`<br>`Ateng-Flutter_1.0.0_linux_arm64_portable.tar.gz` | `.deb`<br>`.rpm`<br>`.tar.gz` | 专为**统信 UOS / 银河麒麟** ARM64 信创桌面设计的标准安装包<br>专为 **openEuler / RedHat ARM** 信创服务器设计的 RPM 安装包<br>树莓派/单板机运行包 |
 
 ---
 

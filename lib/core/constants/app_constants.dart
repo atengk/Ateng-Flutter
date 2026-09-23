@@ -12,7 +12,7 @@ class AppConstants {
   static const String appTitle = 'DevToolbox Studio';
 
   /// 应用简短版本号
-  static const String appVersion = 'v1.0.5';
+  static const String appVersion = 'v1.0.0';
 
   /// GitHub 源码仓库地址
   static const String repoUrl = 'https://github.com/atengk/Ateng-Flutter';
@@ -30,7 +30,7 @@ class AppConstants {
   static const String sampleJson = '''
 {
   "name": "DevToolbox",
-  "version": "1.0.5",
+  "version": "1.0.0",
   "author": "Ateng",
   "features": [
     "JSON 格式化与压缩",

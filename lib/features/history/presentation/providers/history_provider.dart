@@ -67,8 +67,8 @@ class HistoryNotifier extends StateNotifier<HistoryState> {
           id: 'seed-1',
           toolType: ToolType.json,
           actionName: 'JSON 格式化 (2 空格)',
-          inputSummary: '{"app":"DevToolbox","version":"1.0.5"}',
-          outputContent: '{\n  "app": "DevToolbox",\n  "version": "1.0.5"\n}',
+          inputSummary: '{"app":"DevToolbox","version":"1.0.0"}',
+          outputContent: '{\n  "app": "DevToolbox",\n  "version": "1.0.0"\n}',
           timestamp: DateTime.now().subtract(const Duration(minutes: 15)),
         ),
         HistoryItem(
